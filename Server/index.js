@@ -2,12 +2,12 @@ const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 require('dotenv').config();
-const router = require('./router/index')
+const router = require('./router/index');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cors({origin: process.env.FRONTEND_URL, credentials: true}));
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(
 	session({
 		secret: process.env.SESSION_SECRET,
@@ -21,7 +21,6 @@ app.use(
 		},
 	})
 );
-
 
 app.use('/api', router);
 app.listen(PORT, () => {

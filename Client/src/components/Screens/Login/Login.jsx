@@ -5,7 +5,6 @@ const Login = () => {
 		<div>
 			<h1>Login</h1>
 			<LoginForm></LoginForm>
-			<button>getToken</button>
 		</div>
 	);
 };

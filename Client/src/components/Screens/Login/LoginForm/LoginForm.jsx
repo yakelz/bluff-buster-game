@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import styles from './LoginForm.module.css';
 import { useForm } from 'react-hook-form';
 import axios from '../../../../utils/axios';
-import { useDispatch } from 'react-redux';
-import { setAuth } from '../../../../redux/slices/authSlice';
-import { Navigate } from 'react-router-dom';
+import { AuthContext } from '../../../../utils/authProvider';
 
 const LoginForm = () => {
 	const {
@@ -19,18 +17,13 @@ const LoginForm = () => {
 			password: 'superpass123',
 		},
 	});
-
-	const dispatch = useDispatch();
-
+	const { setIsAuthenticated } = useContext(AuthContext);
 	const onSubmit = async (values) => {
 		try {
-			const response = await axios.post('/login', values, {
-				withCredentials: true,
-			});
+			const response = await axios.post('/login', values);
 			alert('Вы успешно вошли в систему!');
+			setIsAuthenticated(true);
 			console.log(response.data);
-			dispatch(setAuth(true));
-			Navigate('/');
 		} catch (error) {
 			if (error.response) {
 				// Запрос был сделан и сервер ответил статусом ошибки

@@ -1,71 +1,90 @@
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import styles from './RegistrationForm.module.css';
+import axios from '../../../../utils/axios';
+import { useForm } from 'react-hook-form';
+import { AuthContext } from '../../../../utils/authProvider';
 
 const RegistrationForm = () => {
-	const [username, setUsername] = useState('');
-	const [password, setPassword] = useState('');
-	const [confirmPassword, setConfirmPassword] = useState('');
-	const [error, setError] = useState('');
+	const {
+		register,
+		handleSubmit,
+		setError,
+		formState: { errors },
+	} = useForm({
+		defaultValues: {
+			username: '',
+			password: '',
+			confirmPassword: '',
+		},
+	});
 
-	const handleRegistration = async (e) => {
-		e.preventDefault();
+	const { setIsAuthenticated } = useContext(AuthContext);
 
-		if (password !== confirmPassword) {
-			setError('Пароли не совпадают.');
+	const handleRegistration = async (values) => {
+		if (values.password !== values.confirmPassword) {
+			setError('confirmPassword', {
+				type: 'manual',
+				message: 'Пароли не совпадают.',
+			});
 			return;
 		}
 
 		try {
-			const response = await fetch('http://localhost:3001/register', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ username, password }),
-			});
-
-			const data = await response.json();
-			console.log(data);
-			if (data.token) {
-				alert('Регистрация прошла успешно!');
-				setError('');
-			} else {
-				setError(data.message || 'Не удалось зарегистрироваться.');
-			}
+			const response = await axios.post('/register', values);
+			alert('Регистрация прошла успешно!');
+			setIsAuthenticated(true);
 		} catch (error) {
-			setError('Ошибка при регистрации: ' + (error.message || 'Неизвестная ошибка'));
+			if (error.response) {
+				// Запрос был сделан и сервер ответил статусом ошибки
+				setError('server', {
+					type: 'manual',
+					message: error.response.data.message || 'Ошибка на сервере',
+				});
+			} else if (error.request) {
+				// Запрос был сделан, но ответа не последовало
+				console.log(error.request);
+				setError('server', { type: 'manual', message: 'Нет ответа от сервера' });
+			} else {
+				// Произошла ошибка в самом запросе
+				console.log('Error', error.message);
+				setError('server', { type: 'manual', message: error.message || 'Неизвестная ошибка' });
+			}
 		}
 	};
 
 	return (
 		<div>
-			<form onSubmit={handleRegistration}>
+			<form onSubmit={handleSubmit(handleRegistration)}>
 				<div>
 					<label htmlFor='username'>Имя пользователя:</label>
 					<input
 						id='username'
 						type='text'
-						value={username}
-						onChange={(e) => setUsername(e.target.value)}
+						{...register('username', { required: 'Введите имя пользователя' })}
 					/>
+					{errors.username && <p className={styles.error}>{errors.username.message}</p>}
 				</div>
 				<div>
 					<label htmlFor='password'>Пароль:</label>
 					<input
 						id='password'
 						type='password'
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
+						{...register('password', { required: 'Введите пароль' })}
 					/>
+					{errors.password && <p className={styles.error}>{errors.password.message}</p>}
 				</div>
 				<div>
 					<label htmlFor='confirmPassword'>Подтвердите пароль:</label>
 					<input
 						id='confirmPassword'
 						type='password'
-						value={confirmPassword}
-						onChange={(e) => setConfirmPassword(e.target.value)}
+						{...register('confirmPassword', { required: 'Подтвердите пароль' })}
 					/>
+					{errors.confirmPassword && (
+						<p className={styles.error}>{errors.confirmPassword.message}</p>
+					)}
 				</div>
-				{error && <p className={styles.error}>{error}</p>}
+				{errors.server && <p className={styles.error}>{errors.server.message}</p>}
 				<button type='submit'>Зарегистрироваться</button>
 			</form>
 		</div>
