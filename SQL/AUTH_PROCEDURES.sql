@@ -1,19 +1,19 @@
 -- Регистрация пользователя
 CREATE PROCEDURE register (login VARCHAR(64), password VARCHAR(64))
 COMMENT "Регистрация пользователя. Параметры: login, password"
-BEGIN
+register:BEGIN
     -- Проверка на минимальную длину пароля и наличие как минимум одной буквы и одной цифры
     IF LENGTH(password) < 6 OR password NOT REGEXP '[0-9]' OR password NOT REGEXP '[a-zA-Z]' THEN
         SELECT 'Пароль должен быть длиной не менее 6 символов и содержать как минимум одну букву и одну цифру' AS error;
-    ELSE
-        INSERT IGNORE INTO Users(login, password) VALUES(login, hashPassword(password));
-        IF ROW_COUNT() = 0 THEN
-            SELECT 'Такой логин уже занят' AS error;
-        ELSE
-            CALL login(login, password);
-        END IF;
+        LEAVE register;
     END IF;
-END;
+    INSERT IGNORE INTO Users(login, password) VALUES(login, hashPassword(password));
+    IF ROW_COUNT() = 0 THEN
+        SELECT 'Такой логин уже занят' AS error;
+    ELSE
+        CALL login(login, password);
+    END IF;
+END register;
 
 -- Функция хэширования пароля
 CREATE FUNCTION hashPassword(password VARCHAR(50))
@@ -70,6 +70,27 @@ END;
 CREATE PROCEDURE clearTokens()
 COMMENT "Очистка старых токенов"
 BEGIN
-	-- Удаление старых токенов. Если токену больше чем день
-	DELETE FROM Tokens WHERE TIMESTAMPDIFF(DAY, created, NOW()) > 1;
+	-- Удаление старых токенов. Если токену больше чем 7 дней
+	DELETE FROM Tokens WHERE TIMESTAMPDIFF(DAY, created, NOW()) > 7;
+END;
+
+-- Проверка токена на валидность
+CREATE PROCEDURE checkToken(tk INT UNSIGNED)
+COMMENT "Проверка токена на валидность. Параметры: token"
+BEGIN
+    DECLARE tokenExists BOOL DEFAULT FALSE;
+    SELECT COUNT(*) INTO tokenExists FROM Tokens WHERE token = tk;
+    SELECT tokenExists AS isValid;
+END;
+
+-- Вспомогающая функция для проверки валидности токена
+-- Возвращает
+--      userLogin – если токен валиден
+--      NULL – если токен невалиден
+CREATE FUNCTION getUserLoginByToken(tk INT UNSIGNED) RETURNS VARCHAR(64)
+COMMENT "Вспомогающая функция для проверки валидности токена. Параметры: token"
+BEGIN
+    DECLARE userLogin VARCHAR(64);
+    SELECT login INTO userLogin FROM Tokens WHERE token = tk;
+    RETURN userLogin;
 END;

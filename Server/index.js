@@ -12,7 +12,7 @@ app.use(
 	session({
 		secret: process.env.SESSION_SECRET,
 		resave: false,
-		saveUninitialized: true,
+		saveUninitialized: false,
 		cookie: {
 			secure: false, // true, если HTTPS
 			httpOnly: true, // Куки недоступны из JavaScript

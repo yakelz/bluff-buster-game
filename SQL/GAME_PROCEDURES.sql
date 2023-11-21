@@ -1,24 +1,44 @@
 -- Начало игры
-CREATE PROCEDURE initGame(lobbyID INT)
-COMMENT 'Инициализация игры. Параметры: lobbyID'
-BEGIN
+CREATE PROCEDURE initGame(tk INT UNSIGNED, lobbyId INT)
+COMMENT 'Инициализация игры. Параметры: userToken, lobbyID'
+initGame:BEGIN
+    DECLARE currentHostId INT;
+
+    -- Проверка на валидность токена
+    DECLARE userId INT;
+	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+    IF userLogin IS NULL THEN
+        SELECT 'Невалидный токен' AS error;
+        LEAVE initGame;
+    END IF;
+
+    -- Получение userId из login
+    SELECT id INTO userId FROM Users WHERE login = userLogin;
+
+    -- Проверка, является ли пользователь хостом лобби
+    -- Берем id хоста
+    SELECT host_id INTO currentHostId FROM GameLobbies WHERE id = lobbyId;
+    IF currentHostId != userId THEN
+        SELECT 'Пользователь не является хостом лобби' AS error;
+        LEAVE initGame;
+    END IF;
+
     -- Проверка, что в лобби есть 4 игрока
-    IF (SELECT COUNT(*) FROM UsersInLobby WHERE lobby_id = lobbyID) != 4 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'В лобби должно быть 4 игрока';
+    IF (SELECT COUNT(*) FROM UsersInLobby WHERE lobby_id = lobbyId) != 4 THEN
+        SELECT 'В лобби должно быть 4 игрока' AS error;
+        LEAVE initGame;
     END IF;
 
     -- Начата ли уже игра?
     -- Берем все id игроков в лобби, и если какой-то игрок находится в turn_player_id, значит игра уже начата.
-    IF EXISTS (SELECT 1 FROM CurrentTurn WHERE turn_player_id IN (SELECT id FROM Players WHERE lobby_id = lobbyID)) THEN
-        -- Можно использовать так вообще?
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Игра уже начата';
+    IF EXISTS (SELECT 1 FROM CurrentTurn WHERE turn_player_id IN (SELECT id FROM Players WHERE lobby_id = lobbyId)) THEN
+        SELECT 'Игра уже начата' AS error;
+        LEAVE initGame;
     END IF;
 
     -- Инициализация игроков
-    CREATE TEMPORARY TABLE lobbyUsers SELECT user_id FROM UsersInLobby WHERE lobby_id = lobbyID;
-    INSERT INTO Players(user_id, lobby_id)
-        SELECT user_id, lobbyID FROM lobbyUsers;
-    DROP TEMPORARY TABLE lobbyUsers;
+    INSERT INTO Players (user_id, lobby_id)
+        SELECT user_id, lobbyId FROM UsersInLobby WHERE lobby_id = lobbyId;
 
     -- Вставка карт для игры
     INSERT INTO Cards (`rank`) VALUES
@@ -26,6 +46,7 @@ BEGIN
         ('A'), ('2'), ('3'), ('4'), ('5'), ('6'), ('7'), ('8'), ('9'), ('10'), ('J'), ('Q'), ('K'),
         ('A'), ('2'), ('3'), ('4'), ('5'), ('6'), ('7'), ('8'), ('9'), ('10'), ('J'), ('Q'), ('K'),
         ('A'), ('2'), ('3'), ('4'), ('5'), ('6'), ('7'), ('8'), ('9'), ('10'), ('J'), ('Q'), ('K');
+
     -- Перемешивание и раздача карт
     CREATE TEMPORARY TABLE LastCards SELECT * FROM Cards ORDER BY id DESC LIMIT 52;
     CREATE TEMPORARY TABLE RandomLastCards AS SELECT * FROM LastCards ORDER BY RAND();
@@ -33,7 +54,7 @@ BEGIN
 
     -- Выделение id игроков
     CREATE TEMPORARY TABLE PlayerIDs AS
-        SELECT id FROM Players WHERE lobby_id = lobbyID ORDER BY id;
+        SELECT id FROM Players WHERE lobby_id = lobbyId ORDER BY id;
 
     -- Раздача карт игрокам
     INSERT INTO PlayerCards (card_id, player_id)
@@ -59,18 +80,19 @@ BEGIN
         SELECT id, 'A', NOW() FROM PlayerIDs ORDER BY RAND() LIMIT 1;
 
     DROP TEMPORARY TABLE PlayerIDs;
-END;
+END initGame;
 
 -- Сделать ход, параметры могут быть NULL
 CREATE PROCEDURE makeMove(playerID INT, card1 INT, card2 INT, card3 INT, card4 INT)
 COMMENT 'Сделать ход. Параметры: playerID, card_id1, card_id2, card_id3, card_id4'
-BEGIN
+makeMove:BEGIN
     DECLARE lobbyID INT;
     SELECT lobby_id INTO lobbyID FROM Players WHERE id = playerID;
 
     -- Проверка, является ли текущий игрок ходящим игроком
     IF NOT EXISTS (SELECT 1 FROM CurrentTurn WHERE turn_player_id = playerID) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Не ваш ход';
+        SELECT 'Не ваш ход' AS error;
+        LEAVE makeMove;
     END IF;
 
     -- Удаление карт игрока, которые он использовал в этом ходу
@@ -114,7 +136,7 @@ BEGIN
         -- Если нет дать проверку следующему
 
     -- Положить карты из TurnCards в TableCards
-END;
+END makeMove;
 
 -- Проверить сходивщего игрока
 CREATE PROCEDURE сheckBluff(token INT UNSIGNED, checkerID INT, turnPlayerID INT)

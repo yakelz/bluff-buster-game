@@ -3,7 +3,9 @@ CREATE TABLE GameLobbies (
     id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'id игрового лобби',
     password VARCHAR(10) COMMENT 'Пароль для лобби',
     turn_time INT UNSIGNED NOT NULL DEFAULT 30 COMMENT 'Время хода в секундах',
-    check_time INT UNSIGNED NOT NULL DEFAULT 15 COMMENT 'Время для проверки хода в секундах'
+    check_time INT UNSIGNED NOT NULL DEFAULT 15 COMMENT 'Время для проверки хода в секундах',
+    host_id INT COMMENT 'id хоста',
+    FOREIGN KEY (host_id) REFERENCES Users (id) ON DELETE SET NULL
 ) COMMENT='Таблица игровых лобби';
 
 -- Таблица информации о игроках
@@ -22,6 +24,7 @@ CREATE TABLE Players (
 CREATE TABLE UsersInLobby (
   user_id INT NOT NULL COMMENT 'id пользователя',
   lobby_id INT NOT NULL COMMENT 'id лобби',
+  is_ready BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Готовность игрока к началу игры',
   PRIMARY KEY(user_id, lobby_id),
   FOREIGN KEY (user_id) REFERENCES Users (id) ON DELETE CASCADE,
   FOREIGN KEY (lobby_id) REFERENCES GameLobbies (id) ON DELETE CASCADE
