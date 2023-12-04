@@ -116,6 +116,9 @@ enterLobby:BEGIN
         LEAVE enterLobby;
     END IF;
 
+    -- Проверка на пароль
+
+
     -- Проверка, не превышено ли максимальное количество игроков в лобби
     IF (SELECT COUNT(*) FROM UsersInLobby WHERE lobby_id = lobbyId) = 4 THEN
         SELECT 'Лобби полное' AS error;
