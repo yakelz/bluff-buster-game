@@ -67,10 +67,9 @@ class UserController {
 	async checkToken(req, res, next) {
 		try {
 			if (!req.session.token) {
-				res.json({
+				return res.json({
 					isAuth: false,
 				});
-				return;
 			}
 			console.log('Начинаю проверять токен');
 			const response = await axios.get(process.env.DB_URL, {
@@ -82,11 +81,11 @@ class UserController {
 			});
 			console.log(response.data);
 			if (response.data.isValid) {
-				res.json({
+				return res.json({
 					isAuth: true,
 				});
 			} else {
-				res.json({
+				return res.json({
 					isAuth: false,
 				});
 			}

@@ -13,7 +13,7 @@ const LoginForm = () => {
 		clearErrors,
 	} = useForm({
 		defaultValues: {
-			username: 'naruto',
+			username: 'narutka',
 			password: 'superpass123',
 		},
 	});
