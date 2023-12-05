@@ -1,8 +1,8 @@
 import React, { useContext } from 'react';
 import styles from './LoginForm.module.css';
 import { useForm } from 'react-hook-form';
-import axios from '../../../../utils/axios';
 import { AuthContext } from '../../../../utils/authProvider';
+import useApi from '../../../../hooks/useApi';
 
 const LoginForm = () => {
 	const {
@@ -10,7 +10,6 @@ const LoginForm = () => {
 		handleSubmit,
 		setError,
 		formState: { errors },
-		clearErrors,
 	} = useForm({
 		defaultValues: {
 			username: 'narutka',
@@ -18,29 +17,22 @@ const LoginForm = () => {
 		},
 	});
 	const { setIsAuthenticated } = useContext(AuthContext);
+	const { sendRequest, error: apiError } = useApi();
+
 	const onSubmit = async (values) => {
-		try {
-			const response = await axios.post('/login', values);
-			alert('Вы успешно вошли в систему!');
-			setIsAuthenticated(true);
-			console.log(response.data);
-		} catch (error) {
-			if (error.response) {
-				// Запрос был сделан и сервер ответил статусом ошибки
-				setError('server', {
-					type: 'manual',
-					message: error.response.data.message || 'Ошибка на сервере',
-				});
-			} else if (error.request) {
-				// Запрос был сделан, но ответа не последовало
-				console.log(error.request);
-				setError('server', { type: 'manual', message: 'Нет ответа от сервера' });
-			} else {
-				// Произошла ошибка в самом запросе
-				console.log('Error', error.message);
-				setError('server', { type: 'manual', message: error.message || 'Неизвестная ошибка' });
-			}
-		}
+		sendRequest({
+			url: '/login',
+			method: 'POST',
+			payload: values,
+			onSuccess: (data) => {
+				alert('Вы успешно вошли в систему!');
+				setIsAuthenticated(true);
+				console.log(data);
+			},
+			onError: (errorMessage) => {
+				setError('server', { type: 'manual', message: errorMessage || 'Ошибка на сервере' });
+			},
+		});
 	};
 
 	return (
@@ -51,7 +43,6 @@ const LoginForm = () => {
 					id='username'
 					type='text'
 					{...register('username', { required: 'Введите имя пользователя' })}
-					onChange={() => clearErrors('username')}
 				/>
 				{errors.username && <p className={styles.error}>{errors.username?.message}</p>}
 			</div>
@@ -61,7 +52,6 @@ const LoginForm = () => {
 					id='password'
 					type='password'
 					{...register('password', { required: 'Введите пароль' })}
-					onChange={() => clearErrors('password')}
 				/>
 			</div>
 			{errors.password && <p className={styles.error}>{errors.password?.message}</p>}

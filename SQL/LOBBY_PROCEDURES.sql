@@ -1,7 +1,8 @@
 -- Вывод всех доступных лобби
 CREATE PROCEDURE showAvailableGames(tk INT UNSIGNED)
-COMMENT "Показывает все лобби, в которых игра еще не началась (меньше 4 игроков). Параметры: userToken"
+COMMENT "Показывает все лобби, в которых игрок еще не участвует и где игра еще не началась (меньше 4 игроков). Параметры: userToken"
 showAvailableGames: BEGIN
+    DECLARE userId INT;
 
     -- Проверка на валидность токена
 	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
@@ -10,8 +11,16 @@ showAvailableGames: BEGIN
         LEAVE showAvailableGames;
     END IF;
 
+    -- Получение userId из login
+    SELECT id INTO userId FROM Users WHERE login = userLogin;
+
      -- Запрос
-    SELECT lobby_id, COUNT(*) AS usersCount FROM UsersInLobby GROUP BY lobby_id HAVING usersCount < 4;
+    SELECT ul.lobby_id, COUNT(*) AS usersCount
+    FROM UsersInLobby ul
+    LEFT JOIN UsersInLobby ul2 ON ul2.lobby_id = ul.lobby_id AND ul2.user_id = userId
+    WHERE ul2.user_id IS NULL
+    GROUP BY ul.lobby_id
+    HAVING usersCount < 4;
 
 END showAvailableGames;
 
@@ -19,6 +28,7 @@ END showAvailableGames;
 CREATE PROCEDURE getCurrentGames(tk INT UNSIGNED)
 COMMENT "Показывает все лобби, в которых игрок уже участвует. Параметры: userToken"
 getCurrentGames: BEGIN
+    DECLARE userId INT;
 
     -- Проверка на валидность токена
 	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
@@ -27,11 +37,15 @@ getCurrentGames: BEGIN
         LEAVE getCurrentGames;
     END IF;
 
+    SELECT id INTO userId FROM Users WHERE login = userLogin;
+
     -- Запрос
-    SELECT gl.id FROM GameLobbies AS gl
+    SELECT gl.id, COUNT(ul2.user_id) AS userCount
+    FROM GameLobbies AS gl
     JOIN UsersInLobby AS ul ON gl.id = ul.lobby_id
-    JOIN Users AS u ON ul.user_id = u.id
-    WHERE u.login = userLogin;
+    LEFT JOIN UsersInLobby AS ul2 ON gl.id = ul2.lobby_id
+    WHERE ul.user_id = userId
+    GROUP BY gl.id;
 
 END getCurrentGames;
 

@@ -1,45 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import axios from '../../../utils/axios';
 import { Link, useNavigate } from 'react-router-dom';
+import useApi from '../../../hooks/useApi';
 
 const Menu = () => {
-	const [data, setData] = useState(null);
 	const navigate = useNavigate();
+	const { data, sendRequest } = useApi();
 
-	const fetchData = async () => {
-		try {
-			const response = await axios.get('/menu');
-			setData(response.data);
-		} catch (error) {
-			console.log('Ошибка при запросе:', error);
-		}
+	const fetchData = () => {
+		sendRequest({ url: '/menu', method: 'GET' });
 	};
 
-	const logout = async () => {
-		try {
-			const response = await axios.post('/logout');
-			window.location.reload();
-		} catch (error) {
-			if (error.response.data) {
-				console.log('Ошибка на сервере:', error.response.data.message);
-				return;
-			}
-			console.log('Ошибка при запросе:', error);
-		}
+	console.log(data);
+
+	const logout = () => {
+		sendRequest({
+			url: '/logout',
+			method: 'POST',
+			onSuccess: () => window.location.reload(),
+		});
 	};
 
-	const enterLobby = async (lobbyId) => {
-		try {
-			const response = await axios.post(`/lobby/${lobbyId}`);
-
-			navigate(`/lobby/${lobbyId}`);
-		} catch (error) {
-			if (error.response) {
-				console.log('Ошибка на сервере:', error.response.data.message);
-				return;
-			}
-			console.log('Ошибка при запросе:', error);
-		}
+	const enterLobby = (lobbyId) => {
+		sendRequest({
+			url: `/lobby/${lobbyId}`,
+			method: 'POST',
+			onSuccess: () => navigate(`/lobby/${lobbyId}`),
+		});
 	};
 
 	useEffect(() => {
@@ -63,7 +49,13 @@ const Menu = () => {
 
 					<div>
 						<h2>Current Games</h2>
-						<p>ID: {data.currentGames.id}</p>
+						{data.currentGames.id.map((id, index) => (
+							<div key={id}>
+								<p>Lobby ID: {id}</p>
+								<p>Users Count: {data.currentGames.userCount[index]}</p>
+								<Link to={`/lobby/${id}`}>Return {id}</Link>
+							</div>
+						))}
 					</div>
 
 					<div>

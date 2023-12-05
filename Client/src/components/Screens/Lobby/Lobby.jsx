@@ -1,28 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import axios from '../../../utils/axios';
 import { useNavigate, useParams } from 'react-router-dom';
+import useApi from '../../../hooks/useApi';
 
 const Lobby = () => {
-	const [data, setData] = useState(null);
 	const navigate = useNavigate();
+	const { data, sendRequest } = useApi();
 	const { id: lobbyId } = useParams();
 
-	const showUsersInLobby = async () => {
-		try {
-			const response = await axios.get(`/lobby/${lobbyId}`);
-			setData(response.data);
-		} catch (error) {
-			console.log('Ошибка при запросе:', error);
-		}
+	const showUsersInLobby = () => {
+		sendRequest({ url: `/lobby/${lobbyId}`, method: 'GET' });
 	};
 
-	const leaveLobby = async () => {
-		try {
-			const response = await axios.delete(`/lobby/${lobbyId}`);
-			navigate('/');
-		} catch (error) {
-			console.log('Ошибка при запросе:', error);
-		}
+	const leaveLobby = () => {
+		sendRequest({
+			url: `/lobby/${lobbyId}`,
+			method: 'DELETE',
+			onSuccess: () => navigate('/'),
+		});
 	};
 
 	useEffect(() => {
