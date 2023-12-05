@@ -40,12 +40,10 @@ END;
 CREATE PROCEDURE logout(tk INT UNSIGNED)
 COMMENT "Выход из аккаунта. Параметры: token"
 BEGIN
-    DECLARE userLogin VARCHAR(64);
-    SELECT login INTO userLogin FROM Tokens WHERE token = tk;
-    IF userLogin IS NULL THEN
+    DELETE FROM Tokens WHERE token = tk;
+    IF ROW_COUNT() = 0 THEN
         SELECT 'Невалидный токен' AS error;
     ELSE
-        DELETE FROM Tokens WHERE token = tk;
         SELECT 'Вы успешно вышли из аккаунта' AS message;
     END IF;
 END;

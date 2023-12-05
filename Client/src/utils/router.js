@@ -24,12 +24,12 @@ const AppRouter = () => {
 			{isAuthenticated ? (
 				<>
 					<Routes>
-						<Route path='/menu' element={<Menu />} />
+						<Route path='/' element={<Menu />} />
 						<Route path='/lobby/:id' element={<Lobby />} />
 						<Route path='/ratings' element={<Ratings />} />
 						<Route path='/rules' element={<Rules />} />
-						<Route path='/settings' element={<Settings />} />\
-						<Route path='*' element={<Navigate to='/menu' />} />
+						<Route path='/settings' element={<Settings />} />
+						<Route path='*' element={<Navigate to='/' />} />
 					</Routes>
 				</>
 			) : (

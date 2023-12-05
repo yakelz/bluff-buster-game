@@ -61,17 +61,32 @@ class UserController {
 
 	async logout(req, res, next) {
 		try {
-		} catch (e) {}
+			const response = await axios.get(process.env.DB_URL, {
+				params: {
+					db: process.env.DB_NAME,
+					pname: 'logout',
+					p1: req.session.token[0],
+				},
+			});
+			const data = response.data;
+
+			// Если токен не валиден
+			if (data.error) {
+				res.status(500).json({ message: data.error });
+				return;
+			}
+
+			// Если токен удален, удаляем сессию
+			req.session.destroy();
+			res.status(200).json({ message: 'Выход выполнен' });
+		} catch (error) {
+			// Ошибка при запросе в БД
+			res.status(500).json({ message: error.message });
+		}
 	}
 
 	async checkToken(req, res, next) {
 		try {
-			if (!req.session.token) {
-				return res.json({
-					isAuth: false,
-				});
-			}
-			console.log('Начинаю проверять токен');
 			const response = await axios.get(process.env.DB_URL, {
 				params: {
 					db: process.env.DB_NAME,
@@ -89,7 +104,7 @@ class UserController {
 					isAuth: false,
 				});
 			}
-		} catch (e) {
+		} catch (error) {
 			// Ошибка при запросе в БД
 			res.status(500).json({ message: error.message });
 		}

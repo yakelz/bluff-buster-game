@@ -1,15 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../../../utils/axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Menu = () => {
 	const [data, setData] = useState(null);
+	const navigate = useNavigate();
 
 	const fetchData = async () => {
 		try {
 			const response = await axios.get('/menu');
 			setData(response.data);
 		} catch (error) {
+			console.log('Ошибка при запросе:', error);
+		}
+	};
+
+	const logout = async () => {
+		try {
+			const response = await axios.post('/logout');
+			window.location.reload();
+		} catch (error) {
+			if (error.response.data) {
+				console.log('Ошибка на сервере:', error.response.data.message);
+				return;
+			}
+			console.log('Ошибка при запросе:', error);
+		}
+	};
+
+	const enterLobby = async (lobbyId) => {
+		try {
+			const response = await axios.post(`/lobby/${lobbyId}`);
+
+			navigate(`/lobby/${lobbyId}`);
+		} catch (error) {
+			if (error.response) {
+				console.log('Ошибка на сервере:', error.response.data.message);
+				return;
+			}
 			console.log('Ошибка при запросе:', error);
 		}
 	};
@@ -23,7 +51,7 @@ const Menu = () => {
 			<h1>Menu</h1>
 			<Link to='/ratings'>Ratings</Link>
 			<Link to='/settings'>Settings</Link>
-			<Link to='/lobby/1'>Lobby</Link>
+			<button onClick={logout}>Logout</button>
 
 			{data ? (
 				<div>
@@ -44,6 +72,7 @@ const Menu = () => {
 							<div key={id}>
 								<p>Lobby ID: {id}</p>
 								<p>Users Count: {data.availableGames.usersCount[index]}</p>
+								<button onClick={() => enterLobby(id)}>Enter</button>
 							</div>
 						))}
 					</div>

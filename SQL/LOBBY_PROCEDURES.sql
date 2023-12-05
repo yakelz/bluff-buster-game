@@ -127,8 +127,7 @@ enterLobby:BEGIN
 
     -- Вход в лобби
     INSERT INTO UsersInLobby (user_id, lobby_id) VALUES (userID, lobbyId);
-    CALL showUsersInLobby(tk, lobbyId);
-
+    SELECT 'Вход в лобби выполнен' AS message;
 END enterLobby;
 
 -- Поставить готовность в лобби
