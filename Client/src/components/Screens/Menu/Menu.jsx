@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useApi from '../../../hooks/useApi';
 
@@ -9,8 +9,6 @@ const Menu = () => {
 	const fetchData = () => {
 		sendRequest({ url: '/menu', method: 'GET' });
 	};
-
-	console.log(data);
 
 	const logout = () => {
 		sendRequest({
@@ -67,6 +65,11 @@ const Menu = () => {
 								<button onClick={() => enterLobby(id)}>Enter</button>
 							</div>
 						))}
+					</div>
+
+					<div>
+						<h2>Create Lobby</h2>
+						<Link to={`/create/`}> Create lobby </Link>
 					</div>
 				</div>
 			) : (

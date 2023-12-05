@@ -12,6 +12,7 @@ router.get('/checkToken', userController.checkToken);
 
 router.get('/menu', tokenValidator, menuController.getUserInfo);
 
+router.post('/lobby', tokenValidator, lobbyController.createLobby);
 router.post('/lobby/:id', tokenValidator, lobbyController.enterLobby);
 router.get('/lobby/:id', tokenValidator, lobbyController.showUsersInLobby);
 router.delete('/lobby/:id', tokenValidator, lobbyController.leaveLobby);

@@ -9,6 +9,7 @@ const LoginForm = () => {
 		register,
 		handleSubmit,
 		setError,
+		clearErrors,
 		formState: { errors },
 	} = useForm({
 		defaultValues: {
@@ -17,7 +18,7 @@ const LoginForm = () => {
 		},
 	});
 	const { setIsAuthenticated } = useContext(AuthContext);
-	const { sendRequest, error: apiError } = useApi();
+	const { sendRequest } = useApi();
 
 	const onSubmit = async (values) => {
 		sendRequest({
@@ -27,7 +28,6 @@ const LoginForm = () => {
 			onSuccess: (data) => {
 				alert('Вы успешно вошли в систему!');
 				setIsAuthenticated(true);
-				console.log(data);
 			},
 			onError: (errorMessage) => {
 				setError('server', { type: 'manual', message: errorMessage || 'Ошибка на сервере' });
@@ -42,19 +42,25 @@ const LoginForm = () => {
 				<input
 					id='username'
 					type='text'
-					{...register('username', { required: 'Введите имя пользователя' })}
+					{...register('username', {
+						required: 'Введите имя пользователя',
+						onChange: () => clearErrors('server'),
+					})}
 				/>
-				{errors.username && <p className={styles.error}>{errors.username?.message}</p>}
+				{errors.username && <p className={styles.error}>{errors.username.message}</p>}
 			</div>
 			<div>
-				<label htmlFor='password'> Пароль:</label>
+				<label htmlFor='password'>Пароль:</label>
 				<input
 					id='password'
 					type='password'
-					{...register('password', { required: 'Введите пароль' })}
+					{...register('password', {
+						required: 'Введите пароль',
+						onChange: () => clearErrors('server'),
+					})}
 				/>
+				{errors.password && <p className={styles.error}>{errors.password.message}</p>}
 			</div>
-			{errors.password && <p className={styles.error}>{errors.password?.message}</p>}
 			<button type='submit'>Войти</button>
 			{errors.server && <p className={styles.error}>{errors.server.message}</p>}
 		</form>

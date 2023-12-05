@@ -13,8 +13,8 @@ const useApi = () => {
 			setData(response.data);
 			if (onSuccess) onSuccess(response.data);
 		} catch (err) {
-			setError(err);
-			if (onError) onError(err.response?.data?.message[0]);
+			setError(err.response?.data?.message || err.message);
+			if (onError) onError(err.response?.data?.message || err.message);
 		} finally {
 			setLoading(false);
 		}

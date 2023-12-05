@@ -12,10 +12,9 @@ const AuthProvider = ({ children }) => {
 			const response = await axios.get('/checkToken');
 			setIsAuthenticated(response.data.isAuth);
 		} catch (e) {
-			console.log('Ошибка при проверке аутентификации:', e);
 			setIsAuthenticated(false);
 		} finally {
-			setIsLoading(false); // Завершение загрузки после получения ответа
+			setIsLoading(false);
 		}
 	};
 

@@ -1,14 +1,15 @@
 import React, { useContext } from 'react';
 import styles from './RegistrationForm.module.css';
-import axios from '../../../../utils/axios';
 import { useForm } from 'react-hook-form';
 import { AuthContext } from '../../../../utils/authProvider';
+import useApi from '../../../../hooks/useApi';
 
 const RegistrationForm = () => {
 	const {
 		register,
 		handleSubmit,
 		setError,
+		clearErrors,
 		formState: { errors },
 	} = useForm({
 		defaultValues: {
@@ -19,8 +20,9 @@ const RegistrationForm = () => {
 	});
 
 	const { setIsAuthenticated } = useContext(AuthContext);
+	const { sendRequest } = useApi();
 
-	const handleRegistration = async (values) => {
+	const handleRegistration = (values) => {
 		if (values.password !== values.confirmPassword) {
 			setError('confirmPassword', {
 				type: 'manual',
@@ -29,27 +31,18 @@ const RegistrationForm = () => {
 			return;
 		}
 
-		try {
-			const response = await axios.post('/register', values);
-			alert('Регистрация прошла успешно!');
-			setIsAuthenticated(true);
-		} catch (error) {
-			if (error.response) {
-				// Запрос был сделан и сервер ответил статусом ошибки
-				setError('server', {
-					type: 'manual',
-					message: error.response.data.message || 'Ошибка на сервере',
-				});
-			} else if (error.request) {
-				// Запрос был сделан, но ответа не последовало
-				console.log(error.request);
-				setError('server', { type: 'manual', message: 'Нет ответа от сервера' });
-			} else {
-				// Произошла ошибка в самом запросе
-				console.log('Error', error.message);
-				setError('server', { type: 'manual', message: error.message || 'Неизвестная ошибка' });
-			}
-		}
+		sendRequest({
+			url: '/register',
+			method: 'POST',
+			payload: values,
+			onSuccess: (data) => {
+				alert('Регистрация прошла успешно!');
+				setIsAuthenticated(true);
+			},
+			onError: (errorMessage) => {
+				setError('server', { type: 'manual', message: errorMessage || 'Ошибка на сервере' });
+			},
+		});
 	};
 
 	return (
@@ -60,7 +53,10 @@ const RegistrationForm = () => {
 					<input
 						id='username'
 						type='text'
-						{...register('username', { required: 'Введите имя пользователя' })}
+						{...register('username', {
+							required: 'Введите имя пользователя',
+							onChange: () => clearErrors(['username', 'server']),
+						})}
 					/>
 					{errors.username && <p className={styles.error}>{errors.username.message}</p>}
 				</div>
@@ -69,7 +65,10 @@ const RegistrationForm = () => {
 					<input
 						id='password'
 						type='password'
-						{...register('password', { required: 'Введите пароль' })}
+						{...register('password', {
+							required: 'Введите пароль',
+							onChange: () => clearErrors(['password', 'server']),
+						})}
 					/>
 					{errors.password && <p className={styles.error}>{errors.password.message}</p>}
 				</div>
@@ -78,7 +77,10 @@ const RegistrationForm = () => {
 					<input
 						id='confirmPassword'
 						type='password'
-						{...register('confirmPassword', { required: 'Подтвердите пароль' })}
+						{...register('confirmPassword', {
+							required: 'Подтвердите пароль',
+							onChange: () => clearErrors(['confirmPassword', 'server']),
+						})}
 					/>
 					{errors.confirmPassword && (
 						<p className={styles.error}>{errors.confirmPassword.message}</p>

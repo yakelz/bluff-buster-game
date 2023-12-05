@@ -8,7 +8,7 @@ import Ratings from '../components/Screens/Ratings/Ratings';
 import Rules from '../components/Screens/Rules/Rules';
 import Start from '../components/Screens/Start/Start';
 import Settings from '../components/Screens/Settings/Settings';
-
+import CreateLobby from '../components/Screens/CreateLobby/CreateLobby';
 import { AuthContext } from './authProvider';
 
 const AppRouter = () => {
@@ -18,7 +18,6 @@ const AppRouter = () => {
 		return <div>Загрузка...</div>;
 	}
 
-	console.log(isAuthenticated);
 	return (
 		<Router>
 			{isAuthenticated ? (
@@ -26,6 +25,7 @@ const AppRouter = () => {
 					<Routes>
 						<Route path='/' element={<Menu />} />
 						<Route path='/lobby/:id' element={<Lobby />} />
+						<Route path='/create/' element={<CreateLobby />} />
 						<Route path='/ratings' element={<Ratings />} />
 						<Route path='/rules' element={<Rules />} />
 						<Route path='/settings' element={<Settings />} />
