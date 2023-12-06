@@ -17,16 +17,16 @@ class UserController {
 
 			// Ошибка регистрации
 			if (data.error) {
-				res.status(500).json({ message: response.data.error });
+				res.status(500).json({ error: response.data.error });
 				return;
 			}
 
 			// Сохранение токена
 			req.session.token = data.token;
-			res.status(200).json({ message: 'Вход выполнен' });
+			res.status(200).json({ id: data.id });
 		} catch (error) {
 			// Ошибка при запросе в БД
-			res.status(500).json({ message: error.message });
+			res.status(500).json({ error: error.message });
 		}
 	}
 
@@ -46,16 +46,17 @@ class UserController {
 
 			if (data.error) {
 				// Ошибка авторизации
-				res.status(500).json({ message: data.error });
+				res.status(500).json({ error: data.error });
 				return;
 			}
 
 			// Сохранение токена
 			req.session.token = data.token;
+			req.session.user_id = data.id;
 			res.status(200).json({ id: data.id });
 		} catch (error) {
 			// Ошибка при запросе в БД
-			res.status(500).json({ message: error.message });
+			res.status(500).json({ error: error.message });
 		}
 	}
 
@@ -72,7 +73,7 @@ class UserController {
 
 			// Если токен не валиден
 			if (data.error) {
-				res.status(500).json({ message: data.error });
+				res.status(500).json({ error: data.error });
 				return;
 			}
 
@@ -81,7 +82,7 @@ class UserController {
 			res.status(200).json({ message: 'Выход выполнен' });
 		} catch (error) {
 			// Ошибка при запросе в БД
-			res.status(500).json({ message: error.message });
+			res.status(500).json({ error: error.message });
 		}
 	}
 
@@ -98,6 +99,7 @@ class UserController {
 			if (response.data.isValid) {
 				return res.json({
 					isAuth: true,
+					id: req.session.user_id[0],
 				});
 			} else {
 				return res.json({
@@ -106,7 +108,7 @@ class UserController {
 			}
 		} catch (error) {
 			// Ошибка при запросе в БД
-			res.status(500).json({ message: error.message });
+			res.status(500).json({ error: error.message });
 		}
 	}
 }

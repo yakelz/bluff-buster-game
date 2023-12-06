@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import useApi from '../../../hooks/useApi';
+import { useSelector } from 'react-redux';
 
 const Lobby = () => {
 	const navigate = useNavigate();
 	const { data, sendRequest } = useApi();
 	const [isReady, setIsReady] = useState(false);
 	const { id: lobbyId } = useParams();
+	const userID = useSelector((state) => state.auth.userID);
+	const [isHost, setIsHost] = useState(false);
 
-	const showUsersInLobby = () => {
+	const getLobbyInfo = () => {
 		sendRequest({ url: `/lobby/${lobbyId}`, method: 'GET' });
 	};
 
@@ -32,15 +35,30 @@ const Lobby = () => {
 
 	useEffect(() => {
 		if (lobbyId) {
-			showUsersInLobby();
+			getLobbyInfo();
 			const interval = setInterval(() => {
-				showUsersInLobby();
+				getLobbyInfo();
 			}, 5000);
 
 			// Очистка интервала при размонтировании компонента
 			return () => clearInterval(interval);
 		}
 	}, [lobbyId]);
+
+	useEffect(() => {
+		if (data && data.usersInLobby && userID) {
+			const userIndex = data.usersInLobby.user_id.findIndex((id) => id === userID);
+			if (userIndex !== -1) {
+				setIsReady(data.usersInLobby.is_ready[userIndex]);
+			}
+			// Проверяем, является ли пользователь хостом
+			if (data.host && data.host.host_id.includes(userID)) {
+				setIsHost(true);
+			} else {
+				setIsHost(false);
+			}
+		}
+	}, [data, userID]);
 
 	return (
 		<div>
@@ -52,12 +70,21 @@ const Lobby = () => {
 					<ul>
 						{data.usersInLobby.login.map((login, index) => (
 							<li key={login}>
+								{data.host && data.host.host_id.includes(data.usersInLobby.user_id[index]) && (
+									<span> (host)</span>
+								)}
 								{login} - Побед: {data.usersInLobby.win_count[index]}
 								<input type='checkbox' checked={data.usersInLobby.is_ready[index] === 1} disabled />
 							</li>
 						))}
 					</ul>
+					{data.lobbySettings.hasPassword == 0 ? 'Без пароля' : 'С паролем'}
+					<p>Время на ход: {data.lobbySettings.turn_time}</p>
+					<p>Время на проверку: {data.lobbySettings.check_time}</p>
 					<button onClick={toggleReady}>{isReady ? 'Отменить готовность' : 'Готов'}</button>
+					{isHost && (
+						<Link to={`/lobby/${lobbyId}/settings`}>Изменить настройки лобби {lobbyId}</Link>
+					)}
 				</div>
 			) : (
 				<div>Загрузка данных...</div>

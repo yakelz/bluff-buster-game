@@ -49,10 +49,10 @@ getCurrentGames: BEGIN
 
 END getCurrentGames;
 
--- Вывод всех игроков в лобби
-CREATE PROCEDURE showUsersInLobby(tk INT UNSIGNED, lobbyId INT UNSIGNED)
-COMMENT "Показать всех пользователей в лобби. Параметры: userToken, lobbyId"
-showUsersInLobby: BEGIN
+-- Вывод информации о лобби
+CREATE PROCEDURE getLobbyInfo(tk INT UNSIGNED, lobbyId INT UNSIGNED)
+COMMENT "Показать информацию о лобби. Параметры: userToken, lobbyId"
+getLobbyInfo: BEGIN
 
     DECLARE userId INT;
 
@@ -60,7 +60,7 @@ showUsersInLobby: BEGIN
 	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
-        LEAVE showUsersInLobby;
+        LEAVE getLobbyInfo;
     END IF;
 
     -- Получение userId из login
@@ -69,17 +69,17 @@ showUsersInLobby: BEGIN
     -- Проверка на то, что пользователь в лобби
     IF NOT EXISTS (SELECT 1 FROM UsersInLobby WHERE user_id = userId AND lobby_id = lobbyId) THEN
         SELECT 'Пользователь не в лобби' AS error;
-        LEAVE showUsersInLobby;
+        LEAVE getLobbyInfo;
     END IF;
 
     -- Запрос
     -- Выдать всех игроков и их кол-во выигранных игр
-    SELECT u.login AS login, u.win_count, ul.is_ready
+    SELECT u.id AS user_id, u.login AS login, u.win_count, ul.is_ready
     FROM UsersInLobby ul
     JOIN Users u ON ul.user_id = u.id
     WHERE ul.lobby_id = lobbyId;
 
-END showUsersInLobby;
+END getLobbyInfo;
 
 -- Вывод хоста лобби
 CREATE PROCEDURE getHost(lobbyId INT UNSIGNED)
@@ -87,6 +87,17 @@ COMMENT "Вывод хоста лобби. Параметры: lobbyId"
 getHost: BEGIN
     SELECT host_id FROM GameLobbies WHERE id = lobbyId;
 END getHost;
+
+-- Настройки лобби
+CREATE PROCEDURE getLobbySettings(lobbyId INT UNSIGNED)
+COMMENT "Получить настройки лобби. Параметры: lobbyId"
+getLobbySettings: BEGIN
+    DECLARE hasPassword BOOLEAN DEFAULT FALSE;
+    IF (SELECT password FROM GameLobbies WHERE id = lobbyId) IS NOT NULL THEN
+        SET hasPassword = true;
+    END IF;
+    SELECT hasPassword, turn_time, check_time FROM GameLobbies WHERE id = lobbyId;
+END getLobbySettings;
 
 -- Создать игровое лобби
 CREATE PROCEDURE createLobby(tk INT UNSIGNED, pw VARCHAR(10), turnT INT UNSIGNED, checkT INT UNSIGNED)
@@ -176,7 +187,7 @@ setReady:BEGIN
     SET is_ready = state
     WHERE user_id = userId AND lobby_id = lobbyId;
 
-    CALL showUsersInLobby(tk, lobbyId);
+    CALL getLobbyInfo(tk, lobbyId);
 
 END setReady;
 

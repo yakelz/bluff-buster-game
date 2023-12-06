@@ -13,10 +13,19 @@ const useApi = () => {
 			const response = await axios({ url, method, data: payload });
 			setData(response.data);
 			if (onSuccess) onSuccess(response.data);
+			//toast.success(response.data.message);
 		} catch (err) {
-			setError(err.response?.data?.message || err.message);
-			toast.error(err.response?.data?.message || err.message);
-			if (onError) onError(err.response?.data?.message || err.message);
+			// Обработка ошибки
+			let errorMessage = 'Client: ' + err.message;
+			if (err.response?.data?.error) {
+				errorMessage = Array.isArray(err.response.data.error)
+					? 'Database: ' + err.response.data.error[0]
+					: 'Server: ' + err.response.data.error;
+			}
+
+			setError(errorMessage);
+			toast.error(errorMessage);
+			if (onError) onError(errorMessage);
 		} finally {
 			setLoading(false);
 		}

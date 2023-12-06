@@ -8,6 +8,7 @@ export const checkToken = createAsyncThunk('auth/checkToken', async (token, { di
 		dispatch(
 			setAuth({
 				isAuth: response.data.isAuth,
+				userID: response.data.id,
 			})
 		);
 	} catch (error) {

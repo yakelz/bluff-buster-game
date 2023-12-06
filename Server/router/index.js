@@ -13,9 +13,11 @@ router.get('/checkToken', tokenValidator, userController.checkToken);
 router.get('/menu', tokenValidator, menuController.getUserInfo);
 
 router.post('/lobby', tokenValidator, lobbyController.createLobby);
+
 router.post('/lobby/:id', tokenValidator, lobbyController.enterLobby);
-router.get('/lobby/:id', tokenValidator, lobbyController.showUsersInLobby);
+router.get('/lobby/:id', tokenValidator, lobbyController.getLobbyInfo);
 router.delete('/lobby/:id', tokenValidator, lobbyController.leaveLobby);
 router.put('/lobby/:id', tokenValidator, lobbyController.setReady);
+router.patch('/lobby/:id', tokenValidator, lobbyController.changeLobbySettings);
 
 module.exports = router;

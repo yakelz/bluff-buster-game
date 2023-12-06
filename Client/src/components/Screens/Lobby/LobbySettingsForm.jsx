@@ -1,41 +1,26 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import useApi from '../../../hooks/useApi';
-import { useNavigate } from 'react-router-dom';
 
-const CreateLobby = () => {
-	const [isPrivate, setIsPrivate] = useState(false);
-	const { data, sendRequest } = useApi();
-	const navigate = useNavigate();
+const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
+	const [isPrivate, setIsPrivate] = useState(initialData.isPrivate || false);
 	const {
 		register,
 		handleSubmit,
 		formState: { errors },
-	} = useForm();
-
-	const onSubmit = (values) => {
-		console.log(values);
-		createLobby(values);
-	};
-
-	const createLobby = (values) => {
-		sendRequest({
-			url: '/lobby/',
-			method: 'POST',
-			payload: values,
-			onSuccess: (data) => navigate(`/lobby/${data.lobbyID}`),
-		});
-	};
+	} = useForm({
+		defaultValues: initialData,
+	});
 
 	return (
 		<div>
-			<h1>Create Lobby</h1>
+			<h1>{title} игровое лобби</h1>
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<div>
 					<label htmlFor='privateRoom'>Создать приватную комнату</label>
 					<input
 						id='privateRoom'
 						type='checkbox'
+						{...register('isPrivate')}
 						checked={isPrivate}
 						onChange={() => setIsPrivate(!isPrivate)}
 					/>
@@ -48,7 +33,7 @@ const CreateLobby = () => {
 							type='text'
 							{...register('password', isPrivate ? { required: 'Password is required' } : {})}
 						/>
-						{isPrivate && errors.password && <p>{errors.password.message}</p>}
+						{errors.password && <p>{errors.password.message}</p>}
 					</div>
 				)}
 				<div>
@@ -72,10 +57,10 @@ const CreateLobby = () => {
 						<option value='30'>30</option>
 					</select>
 				</div>
-				<button type='submit'>Создать комнату</button>
+				<button type='submit'>{title}</button>
 			</form>
 		</div>
 	);
 };
 
-export default CreateLobby;
+export default LobbySettingsForm;
