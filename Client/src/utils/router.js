@@ -12,6 +12,9 @@ import CreateLobby from '../components/Screens/CreateLobby/CreateLobby';
 import { useSelector, useDispatch } from 'react-redux';
 import { checkToken } from '../redux/auth/authThunks';
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const AppRouter = () => {
 	const dispatch = useDispatch();
 	const { isAuthenticated, isLoading } = useSelector((state) => state.auth);
@@ -25,30 +28,44 @@ const AppRouter = () => {
 	}
 
 	return (
-		<Router>
-			{isAuthenticated ? (
-				<>
-					<Routes>
-						<Route path='/' element={<Menu />} />
-						<Route path='/lobby/:id' element={<Lobby />} />
-						<Route path='/create/' element={<CreateLobby />} />
-						<Route path='/ratings' element={<Ratings />} />
-						<Route path='/rules' element={<Rules />} />
-						<Route path='/settings' element={<Settings />} />
-						<Route path='*' element={<Navigate to='/' />} />
-					</Routes>
-				</>
-			) : (
-				<>
-					<Routes>
-						<Route path='/' element={<Start />} />
-						<Route path='/login' element={<Login />} />
-						<Route path='/register' element={<Register />} />
-						<Route path='*' element={<Navigate to='/' />} />
-					</Routes>
-				</>
-			)}
-		</Router>
+		<>
+			<Router>
+				{isAuthenticated ? (
+					<>
+						<Routes>
+							<Route path='/' element={<Menu />} />
+							<Route path='/lobby/:id' element={<Lobby />} />
+							<Route path='/create/' element={<CreateLobby />} />
+							<Route path='/ratings' element={<Ratings />} />
+							<Route path='/rules' element={<Rules />} />
+							<Route path='/settings' element={<Settings />} />
+							<Route path='*' element={<Navigate to='/' />} />
+						</Routes>
+					</>
+				) : (
+					<>
+						<Routes>
+							<Route path='/' element={<Start />} />
+							<Route path='/login' element={<Login />} />
+							<Route path='/register' element={<Register />} />
+							<Route path='*' element={<Navigate to='/' />} />
+						</Routes>
+					</>
+				)}
+			</Router>
+			<ToastContainer
+				position='top-center'
+				autoClose={2000}
+				hideProgressBar={false}
+				newestOnTop={false}
+				closeOnClick
+				rtl={false}
+				pauseOnFocusLoss
+				draggable
+				pauseOnHover
+				theme='light'
+			/>
+		</>
 	);
 };
 

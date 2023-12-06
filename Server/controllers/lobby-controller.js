@@ -71,8 +71,8 @@ class LobbyController {
 					params: { db: process.env.DB_NAME, pname: 'getHost', p1: lobbyId },
 				}),
 			]);
-			console.log(usersInLobby.data);
-			console.log(host.data);
+
+			// Ошибка в БД
 
 			res.status(200).json({
 				usersInLobby: usersInLobby.data,
@@ -117,25 +117,28 @@ class LobbyController {
 		try {
 			const lobbyId = req.params.id;
 			const { state } = req.body;
-			const params = {
-				db: process.env.DB_NAME,
-				pname: 'setReady',
-				p1: req.session.token[0],
-				p2: lobbyId,
-				p3: state,
-			};
 
-			const response = await axios.get(process.env.DB_URL, { params });
-			const data = response.data;
-			console.log(data);
+			const [usersInLobby, host] = await Promise.all([
+				axios.get(process.env.DB_URL, {
+					params: {
+						db: process.env.DB_NAME,
+						pname: 'setReady',
+						p1: req.session.token[0],
+						p2: lobbyId,
+						p3: state,
+					},
+				}),
+				axios.get(process.env.DB_URL, {
+					params: { db: process.env.DB_NAME, pname: 'getHost', p1: lobbyId },
+				}),
+			]);
 
 			// Ошибка в БД
-			if (data.error) {
-				res.status(500).json({ message: response.data.error });
-				return;
-			}
 
-			res.status(200).json(data);
+			res.status(200).json({
+				usersInLobby: usersInLobby.data,
+				host: host.data,
+			});
 		} catch (error) {
 			// Ошибка при запросе в БД
 			res.status(500).json({ message: error.message });

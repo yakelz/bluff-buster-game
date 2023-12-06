@@ -74,7 +74,7 @@ showUsersInLobby: BEGIN
 
     -- Запрос
     -- Выдать всех игроков и их кол-во выигранных игр
-    SELECT u.id AS user_id, u.win_count, ul.is_ready
+    SELECT u.login AS login, u.win_count, ul.is_ready
     FROM UsersInLobby ul
     JOIN Users u ON ul.user_id = u.id
     WHERE ul.lobby_id = lobbyId;

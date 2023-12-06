@@ -45,11 +45,18 @@ const Lobby = () => {
 	return (
 		<div>
 			<h1>Lobby</h1>
-			{data ? (
+			{data && data.usersInLobby ? (
 				<div>
 					<button onClick={leaveLobby}>Leave</button>
 					<h2>Игроки</h2>
-					{JSON.stringify(data)}
+					<ul>
+						{data.usersInLobby.login.map((login, index) => (
+							<li key={login}>
+								{login} - Побед: {data.usersInLobby.win_count[index]}
+								<input type='checkbox' checked={data.usersInLobby.is_ready[index] === 1} disabled />
+							</li>
+						))}
+					</ul>
 					<button onClick={toggleReady}>{isReady ? 'Отменить готовность' : 'Готов'}</button>
 				</div>
 			) : (

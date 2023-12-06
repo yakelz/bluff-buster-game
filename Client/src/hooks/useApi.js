@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from '../utils/axios';
+import { toast } from 'react-toastify';
 
 const useApi = () => {
 	const [data, setData] = useState(null);
@@ -14,6 +15,7 @@ const useApi = () => {
 			if (onSuccess) onSuccess(response.data);
 		} catch (err) {
 			setError(err.response?.data?.message || err.message);
+			toast.error(err.response?.data?.message || err.message);
 			if (onError) onError(err.response?.data?.message || err.message);
 		} finally {
 			setLoading(false);
