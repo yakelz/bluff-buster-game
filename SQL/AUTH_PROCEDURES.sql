@@ -30,8 +30,7 @@ BEGIN
 		THEN
             CALL clearTokens();
 			INSERT INTO Tokens (token, login) VALUES (tk, lg);
-			SELECT tk AS token;
-			CALL showUserInfo(tk);
+			SELECT id, tk AS token FROM Users WHERE login = lg;
 		ELSE SELECT 'Пароль или логин неверный' AS error;
 	END IF;
 END;
@@ -92,3 +91,10 @@ BEGIN
     SELECT login INTO userLogin FROM Tokens WHERE token = tk;
     RETURN userLogin;
 END;
+
+# CREATE PROCEDURE getUserId(tk INT UNSIGNED)
+# COMMENT "Узнать id пользователя по токену. Параметры: token"
+# BEGIN
+#     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+#     SELECT id FROM Users WHERE login = userLogin;
+# END;

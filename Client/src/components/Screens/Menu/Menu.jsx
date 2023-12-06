@@ -28,6 +28,12 @@ const Menu = () => {
 
 	useEffect(() => {
 		fetchData();
+		const interval = setInterval(() => {
+			fetchData();
+		}, 5000);
+
+		// Очистка интервала при размонтировании компонента
+		return () => clearInterval(interval);
 	}, []);
 
 	return (

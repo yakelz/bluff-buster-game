@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Menu from '../components/Screens/Menu/Menu';
 import Login from '../components/Screens/Login/Login';
@@ -9,10 +9,16 @@ import Rules from '../components/Screens/Rules/Rules';
 import Start from '../components/Screens/Start/Start';
 import Settings from '../components/Screens/Settings/Settings';
 import CreateLobby from '../components/Screens/CreateLobby/CreateLobby';
-import { AuthContext } from './authProvider';
+import { useSelector, useDispatch } from 'react-redux';
+import { checkToken } from '../redux/auth/authThunks';
 
 const AppRouter = () => {
-	const { isAuthenticated, isLoading } = useContext(AuthContext);
+	const dispatch = useDispatch();
+	const { isAuthenticated, isLoading } = useSelector((state) => state.auth);
+
+	useEffect(() => {
+		dispatch(checkToken());
+	}, [dispatch]);
 
 	if (isLoading) {
 		return <div>Загрузка...</div>;

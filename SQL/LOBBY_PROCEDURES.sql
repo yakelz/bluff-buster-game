@@ -78,10 +78,15 @@ showUsersInLobby: BEGIN
     FROM UsersInLobby ul
     JOIN Users u ON ul.user_id = u.id
     WHERE ul.lobby_id = lobbyId;
-    -- Выдать хоста комнаты
-    SELECT host_id FROM GameLobbies WHERE id = lobbyId;
 
 END showUsersInLobby;
+
+-- Вывод хоста лобби
+CREATE PROCEDURE getHost(lobbyId INT UNSIGNED)
+COMMENT "Вывод хоста лобби. Параметры: lobbyId"
+getHost: BEGIN
+    SELECT host_id FROM GameLobbies WHERE id = lobbyId;
+END getHost;
 
 -- Создать игровое лобби
 CREATE PROCEDURE createLobby(tk INT UNSIGNED, pw VARCHAR(10), turnT INT UNSIGNED, checkT INT UNSIGNED)

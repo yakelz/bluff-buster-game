@@ -1,8 +1,9 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import styles from './RegistrationForm.module.css';
 import { useForm } from 'react-hook-form';
-import { AuthContext } from '../../../../utils/authProvider';
 import useApi from '../../../../hooks/useApi';
+import { useDispatch } from 'react-redux';
+import { setAuth } from '../../../../redux/auth/authSlice';
 
 const RegistrationForm = () => {
 	const {
@@ -19,8 +20,8 @@ const RegistrationForm = () => {
 		},
 	});
 
-	const { setIsAuthenticated } = useContext(AuthContext);
 	const { sendRequest } = useApi();
+	const dispatch = useDispatch();
 
 	const handleRegistration = (values) => {
 		if (values.password !== values.confirmPassword) {
@@ -37,7 +38,7 @@ const RegistrationForm = () => {
 			payload: values,
 			onSuccess: (data) => {
 				alert('Регистрация прошла успешно!');
-				setIsAuthenticated(true);
+				dispatch(setAuth({ isAuth: true, userID: data.id[0] }));
 			},
 			onError: (errorMessage) => {
 				setError('server', { type: 'manual', message: errorMessage || 'Ошибка на сервере' });

@@ -1,8 +1,10 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import styles from './LoginForm.module.css';
 import { useForm } from 'react-hook-form';
-import { AuthContext } from '../../../../utils/authProvider';
 import useApi from '../../../../hooks/useApi';
+
+import { useDispatch } from 'react-redux';
+import { setAuth } from '../../../../redux/auth/authSlice';
 
 const LoginForm = () => {
 	const {
@@ -17,8 +19,9 @@ const LoginForm = () => {
 			password: 'superpass123',
 		},
 	});
-	const { setIsAuthenticated } = useContext(AuthContext);
+
 	const { sendRequest } = useApi();
+	const dispatch = useDispatch();
 
 	const onSubmit = async (values) => {
 		sendRequest({
@@ -27,7 +30,7 @@ const LoginForm = () => {
 			payload: values,
 			onSuccess: (data) => {
 				alert('Вы успешно вошли в систему!');
-				setIsAuthenticated(true);
+				dispatch(setAuth({ isAuth: true, userID: data.id[0] }));
 			},
 			onError: (errorMessage) => {
 				setError('server', { type: 'manual', message: errorMessage || 'Ошибка на сервере' });

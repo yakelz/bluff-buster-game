@@ -52,7 +52,7 @@ class UserController {
 
 			// Сохранение токена
 			req.session.token = data.token;
-			res.status(200).json({ message: 'Вход выполнен' });
+			res.status(200).json({ id: data.id });
 		} catch (error) {
 			// Ошибка при запросе в БД
 			res.status(500).json({ message: error.message });
