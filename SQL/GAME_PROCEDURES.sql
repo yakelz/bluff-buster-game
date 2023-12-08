@@ -47,11 +47,12 @@ initGame:BEGIN
         SELECT user_id, lobbyId FROM UsersInLobby WHERE lobby_id = lobbyId;
 
     -- Вставка карт для игры
-    INSERT INTO Cards (`rank`) VALUES
-        ('A'), ('2'), ('3'), ('4'), ('5'), ('6'), ('7'), ('8'), ('9'), ('10'), ('J'), ('Q'), ('K'),
-        ('A'), ('2'), ('3'), ('4'), ('5'), ('6'), ('7'), ('8'), ('9'), ('10'), ('J'), ('Q'), ('K'),
-        ('A'), ('2'), ('3'), ('4'), ('5'), ('6'), ('7'), ('8'), ('9'), ('10'), ('J'), ('Q'), ('K'),
-        ('A'), ('2'), ('3'), ('4'), ('5'), ('6'), ('7'), ('8'), ('9'), ('10'), ('J'), ('Q'), ('K');
+    INSERT INTO Cards (`rank`, `suit`) VALUES
+    ('A', 'H'), ('2', 'H'), ('3', 'H'), ('4', 'H'), ('5', 'H'), ('6', 'H'), ('7', 'H'), ('8', 'H'), ('9', 'H'), ('10', 'H'), ('J', 'H'), ('Q', 'H'), ('K', 'H'),
+    ('A', 'D'), ('2', 'D'), ('3', 'D'), ('4', 'D'), ('5', 'D'), ('6', 'D'), ('7', 'D'), ('8', 'D'), ('9', 'D'), ('10', 'D'), ('J', 'D'), ('Q', 'D'), ('K', 'D'),
+    ('A', 'C'), ('2', 'C'), ('3', 'C'), ('4', 'C'), ('5', 'C'), ('6', 'C'), ('7', 'C'), ('8', 'C'), ('9', 'C'), ('10', 'C'), ('J', 'C'), ('Q', 'C'), ('K', 'C'),
+    ('A', 'S'), ('2', 'S'), ('3', 'S'), ('4', 'S'), ('5', 'S'), ('6', 'S'), ('7', 'S'), ('8', 'S'), ('9', 'S'), ('10', 'S'), ('J', 'S'), ('Q', 'S'), ('K', 'S');
+
 
     -- Перемешивание и раздача карт
     CREATE TEMPORARY TABLE LastCards SELECT * FROM Cards ORDER BY id DESC LIMIT 52;
@@ -356,6 +357,7 @@ updateGameInfo: BEGIN
     DECLARE nextPlayerID INT;
     DECLARE checkerID INT;
     DECLARE checkResult VARCHAR(20);
+    DECLARE userId INT;
 
     -- Проверка на валидность токена
 	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
@@ -364,10 +366,26 @@ updateGameInfo: BEGIN
         LEAVE updateGameInfo;
     END IF;
 
+    -- Есть ли такое лобби?
+    IF NOT EXISTS (SELECT 1 FROM GameLobbies WHERE id = lobbyID) THEN
+        SELECT 'Игры не существует' AS error;
+        LEAVE updateGameInfo;
+    END IF;
+
+    -- Начата ли игра?
+    -- Берем все id игроков в лобби, и если какой-то игрок находится в turn_player_id, значит игра уже начата.
+    IF NOT EXISTS (SELECT 1 FROM CurrentTurn WHERE turn_player_id IN (SELECT id FROM Players WHERE lobby_id = lobbyId)) THEN
+        SELECT 'Игра еще не начата' AS error;
+        LEAVE updateGameInfo;
+    END IF;
+
     -- Получение id текущего игрока и текущего номинала
     SELECT turn_player_id, current_rank INTO currentPlayerID, currentRank
     FROM CurrentTurn JOIN Players ON CurrentTurn.turn_player_id = Players.id
     WHERE Players.lobby_id = lobbyID;
+
+    -- Получение userId из login
+    SELECT id INTO userId FROM Users WHERE login = userLogin;
 
     -- Кол-во карт на столе
     SELECT COUNT(*) INTO cardsOnTableCount FROM TableCards WHERE lobby_id = lobbyID;
@@ -390,9 +408,31 @@ updateGameInfo: BEGIN
     END IF;
 
     -- Вывод инфы
-    SELECT currentPlayerID, currentRank, cardsOnTableCount, cardsPlayedCount, nextPlayerID, checkerID, checkResult;
+    SELECT currentPlayerID, currentRank,cardsOnTableCount, cardsPlayedCount, nextPlayerID, checkerID, checkResult;
 
 END updateGameInfo;
+
+-- Error: Result consisted of more than one row
+CREATE PROCEDURE getPlayerCards(token INT UNSIGNED, lobbyId INT)
+COMMENT 'Получить карты игрока. Параметры: userToken, lobbyId'
+getPlayerCards: BEGIN
+
+    DECLARE userId INT;
+    -- Проверка на валидность токена
+	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
+    IF userLogin IS NULL THEN
+        SELECT 'Невалидный токен' AS error;
+        LEAVE getPlayerCards;
+    END IF;
+
+    -- Получение userId из login
+    SELECT id INTO userId FROM Users WHERE login = userLogin;
+
+    SELECT `rank`
+    FROM PlayerCards JOIN Cards ON PlayerCards.card_id = Cards.id
+    WHERE player_id = (SELECT id FROM Players WHERE user_id = userId AND lobby_id = lobbyId);
+END;
+
 
 -- Включить автоматическую игру игроку
 -- Когда человек вышел из текущей игры

@@ -10,6 +10,7 @@ const Lobby = () => {
 	const { id: lobbyId } = useParams();
 	const userID = useSelector((state) => state.auth.userID);
 	const [isHost, setIsHost] = useState(false);
+	const [allReady, setAllReady] = useState(false);
 
 	const getLobbyInfo = () => {
 		sendRequest({ url: `/lobby/${lobbyId}`, method: 'GET' });
@@ -30,6 +31,14 @@ const Lobby = () => {
 			url: `/lobby/${lobbyId}`,
 			method: 'DELETE',
 			onSuccess: () => navigate('/'),
+		});
+	};
+
+	const startGame = () => {
+		sendRequest({
+			url: `/game/${lobbyId}`,
+			method: 'POST',
+			onSuccess: () => navigate(`/game/${lobbyId}`),
 		});
 	};
 
@@ -57,6 +66,11 @@ const Lobby = () => {
 			} else {
 				setIsHost(false);
 			}
+
+			// Проверяем, готовы ли все игроки
+			const areAllPlayersReady = data.usersInLobby.is_ready.every((status) => status === 1);
+			const isLobbyFull = data.usersInLobby.user_id.length === 4;
+			setAllReady(areAllPlayersReady && isLobbyFull);
 		}
 	}, [data, userID]);
 
@@ -85,6 +99,7 @@ const Lobby = () => {
 					{isHost && (
 						<Link to={`/lobby/${lobbyId}/settings`}>Изменить настройки лобби {lobbyId}</Link>
 					)}
+					{isHost && allReady && <button onClick={startGame}>Начать игру</button>}
 				</div>
 			) : (
 				<div>Загрузка данных...</div>

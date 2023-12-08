@@ -1,7 +1,8 @@
 -- Таблица информации о картах
 CREATE TABLE Cards (
   id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'id карты',
-  rank ENUM ('A','2','3','4','5','6','7','8','9','10','J','Q','K') NOT NULL COMMENT 'Ранг карты'
+  rank ENUM ('A','2','3','4','5','6','7','8','9','10','J','Q','K') NOT NULL COMMENT 'Ранг карты',
+  suit ENUM ('H','D','C','S') NOT NULL COMMENT 'Масть карты, [Hearts, Diamonds, Clubs, Spades]'
 ) COMMENT='Таблица информации о картах';
 
 -- Таблица для хранения карт на столе

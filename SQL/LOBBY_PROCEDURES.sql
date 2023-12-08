@@ -272,6 +272,10 @@ changeLobbySettings: BEGIN
     SET password = newPassword, turn_time = newTurnTime, check_time = newCheckTime
     WHERE id = lobbyId;
 
+    UPDATE UsersInLobby
+    SET is_ready = 0
+    WHERE lobby_id = lobbyId;
+
     SELECT 'Настройки лобби обновлены' AS success;
 
 END changeLobbySettings;

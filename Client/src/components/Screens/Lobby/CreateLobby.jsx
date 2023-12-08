@@ -1,4 +1,3 @@
-// CreateLobby.jsx
 import React from 'react';
 import useApi from '../../../hooks/useApi';
 import { useNavigate } from 'react-router-dom';
