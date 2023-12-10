@@ -30,7 +30,7 @@ const LoginForm = () => {
 			payload: values,
 			onSuccess: (data) => {
 				alert('Вы успешно вошли в систему!');
-				dispatch(setAuth({ isAuth: true, userID: data.id[0] }));
+				dispatch(setAuth({ isAuth: true, userID: data.id }));
 			},
 			onError: (errorMessage) => {
 				setError('server', { type: 'manual', message: errorMessage || 'Ошибка на сервере' });

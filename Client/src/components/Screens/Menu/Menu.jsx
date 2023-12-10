@@ -37,14 +37,16 @@ const Menu = () => {
 	}, []);
 
 	return (
-		<div>
-			<h1>Menu</h1>
-			<Link to='/ratings'>Ratings</Link>
-			<Link to='/settings'>Settings</Link>
-			<button onClick={logout}>Logout</button>
-
-			{data ? (
+		<>
+			{!data ? (
+				<div>Загрузка данных...</div>
+			) : (
 				<div>
+					<h1>Menu</h1>
+					<Link to='/ratings'>Ratings</Link>
+					<Link to='/settings'>Settings</Link>
+					<button onClick={logout}>Logout</button>
+
 					<div>
 						<h2>UserInfo</h2>
 						<p>Login: {data.userInfo.login}</p>
@@ -53,35 +55,35 @@ const Menu = () => {
 
 					<div>
 						<h2>Current Games</h2>
-						{data.currentGames.id.map((id, index) => (
-							<div key={id}>
-								<p>Lobby ID: {id}</p>
-								<p>Users Count: {data.currentGames.userCount[index]}</p>
-								<Link to={`/lobby/${id}`}>Return {id}</Link>
-							</div>
-						))}
+						{data.currentGames &&
+							data.currentGames.map((game, index) => (
+								<div key={game.id}>
+									<p>Lobby ID: {game.id}</p>
+									<p>Users Count: {game.userCount}</p>
+									<Link to={`/lobby/${game.id}`}>Return {game.id}</Link>
+								</div>
+							))}
 					</div>
 
 					<div>
 						<h2>Available Games</h2>
-						{data.availableGames.lobby_id.map((id, index) => (
-							<div key={id}>
-								<p>Lobby ID: {id}</p>
-								<p>Users Count: {data.availableGames.usersCount[index]}</p>
-								<button onClick={() => enterLobby(id)}>Enter</button>
-							</div>
-						))}
+						{data.availableGames &&
+							data.availableGames.map((game, index) => (
+								<div key={game.lobby_id}>
+									<p>Lobby ID: {game.lobby_id}</p>
+									<p>Users Count: {game.usersCount}</p>
+									<button onClick={() => enterLobby(game.lobby_id)}>Enter</button>
+								</div>
+							))}
 					</div>
 
 					<div>
 						<h2>Create Lobby</h2>
-						<Link to={`/create/`}> Create lobby </Link>
+						<Link to={`/create/`}>Create lobby</Link>
 					</div>
 				</div>
-			) : (
-				<div>Загрузка данных...</div>
 			)}
-		</div>
+		</>
 	);
 };
 

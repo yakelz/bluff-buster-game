@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
-	const [isPrivate, setIsPrivate] = useState(initialData.isPrivate || false);
+	console.log(initialData);
+	const [isPrivate, setIsPrivate] = useState(Boolean(initialData?.hasPassword) || false);
+	console.log(isPrivate);
 	const {
 		register,
 		handleSubmit,
 		formState: { errors },
 	} = useForm({
 		defaultValues: initialData,
+		turn_time: initialData?.turn_time,
+		check_time: initialData?.check_time,
 	});
 
 	return (
@@ -16,7 +20,7 @@ const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
 			<h1>{title} игровое лобби</h1>
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<div>
-					<label htmlFor='privateRoom'>Создать приватную комнату</label>
+					<label htmlFor='privateRoom'>Приватная комната</label>
 					<input
 						id='privateRoom'
 						type='checkbox'
@@ -38,7 +42,7 @@ const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
 				)}
 				<div>
 					<label htmlFor='turn_time'>Turn Time (sec):</label>
-					<select id='turn_time' {...register('turn_time', { required: 'Turn time is required' })}>
+					<select id='turn_time' {...register('turn_time')}>
 						<option value='10'>10</option>
 						<option value='15'>15</option>
 						<option value='20'>20</option>

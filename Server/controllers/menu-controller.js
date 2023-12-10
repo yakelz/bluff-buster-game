@@ -1,32 +1,35 @@
-const axios = require('axios');
+const callProcedure = require('../db/call');
 
 class MenuController {
 	async getUserInfo(req, res, next) {
 		try {
-			// Параллельное выполнение запросов к БД
-			const [userInfo, currentGames, availableGames] = await Promise.all([
-				axios.get(process.env.DB_URL, {
-					params: { db: process.env.DB_NAME, pname: 'showUserInfo', p1: req.session.token[0] },
-				}),
-				axios.get(process.env.DB_URL, {
-					params: { db: process.env.DB_NAME, pname: 'getCurrentGames', p1: req.session.token[0] },
-				}),
-				axios.get(process.env.DB_URL, {
-					params: {
-						db: process.env.DB_NAME,
-						pname: 'showAvailableGames',
-						p1: req.session.token[0],
-					},
-				}),
-			]);
+			const params = [req.session.token];
+			const userInfo = await callProcedure('showUserInfo', params);
+			let currentGames = await callProcedure('getCurrentGames', params);
+			let availableGames = await callProcedure('showAvailableGames', params);
+
+			currentGames = Array.isArray(currentGames)
+				? currentGames
+				: currentGames
+				? [currentGames]
+				: [];
+			availableGames = Array.isArray(availableGames)
+				? availableGames
+				: availableGames
+				? [availableGames]
+				: [];
+
+			console.log(currentGames);
+			console.log(availableGames);
 
 			res.status(200).json({
-				userInfo: userInfo.data,
-				currentGames: currentGames.data,
-				availableGames: availableGames.data,
+				userInfo: userInfo,
+				currentGames: currentGames,
+				availableGames: availableGames,
 			});
 		} catch (error) {
-			res.status(500).json({ error: error.message });
+			console.log(error);
+			res.status(500).json({ error: error });
 		}
 	}
 }

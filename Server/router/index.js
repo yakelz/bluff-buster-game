@@ -1,5 +1,6 @@
 const Router = require('express').Router;
 const router = new Router();
+
 const gameController = require('../controllers/game-controller');
 const lobbyController = require('../controllers/lobby-controller');
 const menuController = require('../controllers/menu-controller');

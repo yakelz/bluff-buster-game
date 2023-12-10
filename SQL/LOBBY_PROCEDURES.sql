@@ -1,11 +1,12 @@
 -- Вывод всех доступных лобби
 CREATE PROCEDURE showAvailableGames(tk INT UNSIGNED)
-COMMENT "Показывает все лобби, в которых игрок еще не участвует и где игра еще не началась (меньше 4 игроков). Параметры: userToken"
-showAvailableGames: BEGIN
+    COMMENT "Показывает все лобби, в которых игрок еще не участвует и где игра еще не началась (меньше 4 игроков). Параметры: userToken"
+showAvailableGames:
+BEGIN
     DECLARE userId INT;
 
     -- Проверка на валидность токена
-	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+    DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
         LEAVE showAvailableGames;
@@ -14,10 +15,10 @@ showAvailableGames: BEGIN
     -- Получение userId из login
     SELECT id INTO userId FROM Users WHERE login = userLogin;
 
-     -- Запрос
+    -- Запрос
     SELECT ul.lobby_id, COUNT(*) AS usersCount
     FROM UsersInLobby ul
-    LEFT JOIN UsersInLobby ul2 ON ul2.lobby_id = ul.lobby_id AND ul2.user_id = userId
+             LEFT JOIN UsersInLobby ul2 ON ul2.lobby_id = ul.lobby_id AND ul2.user_id = userId
     WHERE ul2.user_id IS NULL
     GROUP BY ul.lobby_id
     HAVING usersCount < 4;
@@ -26,12 +27,13 @@ END showAvailableGames;
 
 -- Вывод всех лобби, в которых игрок уже участвует
 CREATE PROCEDURE getCurrentGames(tk INT UNSIGNED)
-COMMENT "Показывает все лобби, в которых игрок уже участвует. Параметры: userToken"
-getCurrentGames: BEGIN
+    COMMENT "Показывает все лобби, в которых игрок уже участвует. Параметры: userToken"
+getCurrentGames:
+BEGIN
     DECLARE userId INT;
 
     -- Проверка на валидность токена
-	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+    DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
         LEAVE getCurrentGames;
@@ -42,8 +44,8 @@ getCurrentGames: BEGIN
     -- Запрос
     SELECT gl.id, COUNT(ul2.user_id) AS userCount
     FROM GameLobbies AS gl
-    JOIN UsersInLobby AS ul ON gl.id = ul.lobby_id
-    LEFT JOIN UsersInLobby AS ul2 ON gl.id = ul2.lobby_id
+             JOIN UsersInLobby AS ul ON gl.id = ul.lobby_id
+             LEFT JOIN UsersInLobby AS ul2 ON gl.id = ul2.lobby_id
     WHERE ul.user_id = userId
     GROUP BY gl.id;
 
@@ -51,13 +53,14 @@ END getCurrentGames;
 
 -- Вывод информации о лобби
 CREATE PROCEDURE getLobbyInfo(tk INT UNSIGNED, lobbyId INT UNSIGNED)
-COMMENT "Показать информацию о лобби. Параметры: userToken, lobbyId"
-getLobbyInfo: BEGIN
+    COMMENT "Показать информацию о лобби. Параметры: userToken, lobbyId"
+getLobbyInfo:
+BEGIN
 
     DECLARE userId INT;
 
     -- Проверка на валидность токена
-	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+    DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
         LEAVE getLobbyInfo;
@@ -76,22 +79,23 @@ getLobbyInfo: BEGIN
     -- Выдать всех игроков и их кол-во выигранных игр
     SELECT u.id AS user_id, u.login AS login, u.win_count, ul.is_ready
     FROM UsersInLobby ul
-    JOIN Users u ON ul.user_id = u.id
+             JOIN Users u ON ul.user_id = u.id
     WHERE ul.lobby_id = lobbyId;
-
 END getLobbyInfo;
 
 -- Вывод хоста лобби
 CREATE PROCEDURE getHost(lobbyId INT UNSIGNED)
-COMMENT "Вывод хоста лобби. Параметры: lobbyId"
-getHost: BEGIN
+    COMMENT "Вывод хоста лобби. Параметры: lobbyId"
+getHost:
+BEGIN
     SELECT host_id FROM GameLobbies WHERE id = lobbyId;
 END getHost;
 
 -- Настройки лобби
 CREATE PROCEDURE getLobbySettings(lobbyId INT UNSIGNED)
-COMMENT "Получить настройки лобби. Параметры: lobbyId"
-getLobbySettings: BEGIN
+    COMMENT "Получить настройки лобби. Параметры: lobbyId"
+getLobbySettings:
+BEGIN
     DECLARE hasPassword BOOLEAN DEFAULT FALSE;
     IF (SELECT password FROM GameLobbies WHERE id = lobbyId) IS NOT NULL THEN
         SET hasPassword = true;
@@ -101,13 +105,14 @@ END getLobbySettings;
 
 -- Создать игровое лобби
 CREATE PROCEDURE createLobby(tk INT UNSIGNED, pw VARCHAR(10), turnT INT UNSIGNED, checkT INT UNSIGNED)
-COMMENT "Создание игрового лобби. Параметры: userToken, password, turnTime, checkTime"
-createLobby: BEGIN
+    COMMENT "Создание игрового лобби. Параметры: userToken, password, turnTime, checkTime"
+createLobby:
+BEGIN
 
     DECLARE userId INT;
 
     -- Проверка на валидность токена
-	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+    DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
         LEAVE createLobby;
@@ -117,21 +122,23 @@ createLobby: BEGIN
     SELECT id INTO userId FROM Users WHERE login = userLogin;
 
     -- Запрос
-    INSERT INTO GameLobbies (password, turn_time, check_time, host_id) VALUES (pw, turnT, checkT,userId);
-	INSERT INTO UsersInLobby (user_id, lobby_id) VALUES ((SELECT id FROM Users WHERE login = userLogin), LAST_INSERT_ID());
+    INSERT INTO GameLobbies (password, turn_time, check_time, host_id) VALUES (pw, turnT, checkT, userId);
+    INSERT INTO UsersInLobby (user_id, lobby_id)
+    VALUES ((SELECT id FROM Users WHERE login = userLogin), LAST_INSERT_ID());
     SELECT LAST_INSERT_ID() AS lobbyID;
 
 END createLobby;
 
 
 -- Войти в игровое лобби
-CREATE PROCEDURE enterLobby (tk INT UNSIGNED, lobbyId INT UNSIGNED)
-COMMENT 'Процедура для входа в лобби. Параметры: userToken, lobbyId'
-enterLobby:BEGIN
+CREATE PROCEDURE enterLobby(tk INT UNSIGNED, lobbyId INT UNSIGNED)
+    COMMENT 'Процедура для входа в лобби. Параметры: userToken, lobbyId'
+enterLobby:
+BEGIN
 
     -- Проверка на валидность токена
     DECLARE userId INT;
-	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+    DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
         LEAVE enterLobby;
@@ -161,13 +168,14 @@ enterLobby:BEGIN
 END enterLobby;
 
 -- Поставить готовность в лобби
-CREATE PROCEDURE setReady (tk INT UNSIGNED, lobbyId INT UNSIGNED, state BOOLEAN)
-COMMENT 'Поставить готовность в лобби. Параметры: userToken, lobbyId, state'
-setReady:BEGIN
+CREATE PROCEDURE setReady(tk INT UNSIGNED, lobbyId INT UNSIGNED, state BOOLEAN)
+    COMMENT 'Поставить готовность в лобби. Параметры: userToken, lobbyId, state'
+setReady:
+BEGIN
 
     -- Проверка на валидность токена
     DECLARE userId INT;
-	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+    DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
         LEAVE setReady;
@@ -185,7 +193,8 @@ setReady:BEGIN
     -- Обновление статуса готовности пользователя
     UPDATE UsersInLobby
     SET is_ready = state
-    WHERE user_id = userId AND lobby_id = lobbyId;
+    WHERE user_id = userId
+      AND lobby_id = lobbyId;
 
     CALL getLobbyInfo(tk, lobbyId);
 
@@ -193,13 +202,14 @@ END setReady;
 
 -- Выход из лобби
 CREATE PROCEDURE leaveLobby(tk INT UNSIGNED, lobbyId INT UNSIGNED)
-COMMENT 'Процедура для выхода из лобби. Параметры: userToken, lobbyId'
-leaveLobby:BEGIN
+    COMMENT 'Процедура для выхода из лобби. Параметры: userToken, lobbyId'
+leaveLobby:
+BEGIN
     DECLARE currentHostId INT;
 
     -- Проверка на валидность токена
     DECLARE userId INT;
-	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+    DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
         LEAVE leaveLobby;
@@ -212,14 +222,17 @@ leaveLobby:BEGIN
     -- Берем id хоста
     SELECT host_id INTO currentHostId FROM GameLobbies WHERE id = lobbyId;
     IF currentHostId = userId THEN
-         -- Проверяем, остались ли другие игроки в лобби
+        -- Проверяем, остались ли другие игроки в лобби
         IF (SELECT COUNT(*) FROM UsersInLobby WHERE lobby_id = lobbyId) > 1 THEN
             -- Назначаем рандомно нового хоста из оставшихся игроков
             UPDATE GameLobbies
             SET host_id =
-                (SELECT user_id FROM UsersInLobby
-                                WHERE lobby_id = lobbyId AND user_id != userId
-                                ORDER BY RAND() LIMIT 1)
+                    (SELECT user_id
+                     FROM UsersInLobby
+                     WHERE lobby_id = lobbyId
+                       AND user_id != userId
+                     ORDER BY RAND()
+                     LIMIT 1)
             WHERE id = lobbyId;
         ELSE
             -- Удаляем лобби, если других игроков нет
@@ -243,14 +256,15 @@ CREATE PROCEDURE changeLobbySettings(
     newTurnTime INT UNSIGNED,
     newCheckTime INT UNSIGNED
 )
-COMMENT 'Изменение настроек лобби. Параметры: userToken, lobbyId, newPassword, newTurnTime, newCheckTime'
-changeLobbySettings: BEGIN
+    COMMENT 'Изменение настроек лобби. Параметры: userToken, lobbyId, newPassword, newTurnTime, newCheckTime'
+changeLobbySettings:
+BEGIN
 
     DECLARE currentHostId INT;
 
     -- Проверка на валидность токена
     DECLARE userId INT;
-	DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
+    DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
         LEAVE changeLobbySettings;
@@ -269,7 +283,9 @@ changeLobbySettings: BEGIN
 
     -- Обновление настроек лобби
     UPDATE GameLobbies
-    SET password = newPassword, turn_time = newTurnTime, check_time = newCheckTime
+    SET password   = newPassword,
+        turn_time  = newTurnTime,
+        check_time = newCheckTime
     WHERE id = lobbyId;
 
     UPDATE UsersInLobby
