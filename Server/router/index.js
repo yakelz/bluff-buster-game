@@ -23,5 +23,8 @@ router.patch('/lobby/:id', tokenValidator, lobbyController.changeLobbySettings);
 
 router.post('/game/:id', tokenValidator, gameController.startGame);
 router.get('/game/:id', tokenValidator, gameController.updateGameInfo);
+router.put('/game/:id', tokenValidator, gameController.makeMove);
+router.post('/game/:id/check', tokenValidator, gameController.checkBluff);
+router.post('/game/:id/decline', tokenValidator, gameController.declineCheckBluff);
 
 module.exports = router;

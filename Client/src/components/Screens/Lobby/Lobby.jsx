@@ -16,7 +16,15 @@ const Lobby = () => {
 	const dispatch = useDispatch();
 
 	const getLobbyInfo = () => {
-		sendRequest({ url: `/lobby/${lobbyId}`, method: 'GET' });
+		sendRequest({
+			url: `/lobby/${lobbyId}`,
+			method: 'GET',
+			onSuccess: (responseData) => {
+				if (responseData && responseData.state) {
+					navigate(`/game/${lobbyId}`);
+				}
+			},
+		});
 	};
 
 	const toggleReady = () => {

@@ -1,4 +1,5 @@
 const callProcedure = require('../db/call');
+const executeQuery = require('../db/execute');
 
 class LobbyController {
 	async enterLobby(req, res, next) {
@@ -28,7 +29,14 @@ class LobbyController {
 	async getLobbyInfo(req, res, next) {
 		const lobbyId = req.params.id;
 		try {
-			let usersInLobby = await callProcedure('getLobbyInfo', [req.session.token, lobbyId]);
+			// Если игра уже начата
+			let isGameStarted = await executeQuery('SELECT isGameStarted(?) AS state', [lobbyId]);
+			if (isGameStarted.state === 1) {
+				res.status(200).json(isGameStarted);
+				return;
+			}
+
+			let usersInLobby = await callProcedure('getUsersInLobby', [req.session.token, lobbyId]);
 			const lobbySettings = await callProcedure('getLobbySettings', [lobbyId]);
 			const host = await callProcedure('getHost', [lobbyId]);
 

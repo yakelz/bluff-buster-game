@@ -16,6 +16,13 @@ const redisClient = createClient({
 		host: process.env.REDIS_HOST,
 		port: process.env.REDIS_PORT,
 	},
+	retry_strategy: function (options) {
+		if (options.error && options.error.code === 'ECONNREFUSED') {
+			return new Error('Сервер отказал в подключении');
+		}
+		// Повторное подключение
+		return Math.min(options.attempt * 100, 3000);
+	},
 });
 
 redisClient.connect().catch(console.error);

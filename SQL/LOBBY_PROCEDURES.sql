@@ -52,9 +52,9 @@ BEGIN
 END getCurrentGames;
 
 -- Вывод информации о лобби
-CREATE PROCEDURE getLobbyInfo(tk INT UNSIGNED, lobbyId INT UNSIGNED)
+CREATE PROCEDURE getUsersInLobby(tk INT UNSIGNED, lobbyId INT UNSIGNED)
     COMMENT "Показать информацию о лобби. Параметры: userToken, lobbyId"
-getLobbyInfo:
+getUsersInLobby:
 BEGIN
 
     DECLARE userId INT;
@@ -63,16 +63,22 @@ BEGIN
     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(tk);
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
-        LEAVE getLobbyInfo;
+        LEAVE getUsersInLobby;
     END IF;
 
     -- Получение userId из login
     SELECT id INTO userId FROM Users WHERE login = userLogin;
 
+    -- Проверка на существование лобби
+    IF NOT EXISTS (SELECT 1 FROM GameLobbies WHERE id = lobbyId) THEN
+        SELECT 'Лобби не существует' AS error;
+        LEAVE getUsersInLobby;
+    END IF;
+
     -- Проверка на то, что пользователь в лобби
     IF NOT EXISTS (SELECT 1 FROM UsersInLobby WHERE user_id = userId AND lobby_id = lobbyId) THEN
         SELECT 'Пользователь не в лобби' AS error;
-        LEAVE getLobbyInfo;
+        LEAVE getUsersInLobby;
     END IF;
 
     -- Запрос
@@ -81,7 +87,7 @@ BEGIN
     FROM UsersInLobby ul
              JOIN Users u ON ul.user_id = u.id
     WHERE ul.lobby_id = lobbyId;
-END getLobbyInfo;
+END getUsersInLobby;
 
 -- Вывод хоста лобби
 CREATE PROCEDURE getHost(lobbyId INT UNSIGNED)
@@ -129,6 +135,17 @@ BEGIN
 
 END createLobby;
 
+
+-- Начата ли игра?
+CREATE FUNCTION isGameStarted(lobbyId INT UNSIGNED) RETURNS BOOLEAN
+    COMMENT "Проверка на начало игры. Параметры: lobbyId"
+BEGIN
+    DECLARE isGameStarted BOOLEAN DEFAULT FALSE;
+    IF EXISTS (SELECT 1 FROM CurrentTurn WHERE turn_player_id IN (SELECT id FROM Players WHERE lobby_id = lobbyId)) THEN
+        SET isGameStarted = true;
+    END IF;
+    RETURN isGameStarted;
+END;
 
 -- Войти в игровое лобби
 CREATE PROCEDURE enterLobby(tk INT UNSIGNED, lobbyId INT UNSIGNED)
@@ -196,7 +213,7 @@ BEGIN
     WHERE user_id = userId
       AND lobby_id = lobbyId;
 
-    CALL getLobbyInfo(tk, lobbyId);
+    CALL getUsersInLobby(tk, lobbyId);
 
 END setReady;
 

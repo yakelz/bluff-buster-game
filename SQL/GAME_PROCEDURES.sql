@@ -172,6 +172,12 @@ BEGIN
         LEAVE makeMove;
     END IF;
 
+    -- Проверка, не сходил ли игрок уже
+    IF EXISTS (SELECT 1 FROM TurnCards WHERE turn_player_id = playerID) THEN
+        SELECT 'Вы уже сходили' AS error;
+        LEAVE makeMove;
+    END IF;
+
     -- Удаление карт игрока, которые он использовал в этом ходу
     DELETE FROM PlayerCards WHERE player_id = playerID AND card_id IN (card1, card2, card3, card4);
 
@@ -325,12 +331,11 @@ BEGIN
         VALUES (nextPlayerId, turnPlayerID, NOW());
     END IF;
 
-
 END declineCheckBluff;
 
 
 -- Проверить сходивщего игрока
-CREATE PROCEDURE сheckBluff(token INT UNSIGNED, checkerID INT, turnPlayerID INT)
+CREATE PROCEDURE checkBluff(token INT UNSIGNED, checkerID INT, turnPlayerID INT)
     COMMENT 'Проверка на блеф. Параметры: userToken, checkerID, turnPlayerID'
 checkBluff:
 BEGIN
@@ -444,6 +449,7 @@ BEGIN
     DECLARE checkerID INT;
     DECLARE checkResult VARCHAR(20);
     DECLARE userId INT;
+    DECLARE playerID INT;
 
     -- Проверка на валидность токена
     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
@@ -477,6 +483,10 @@ BEGIN
     -- Получение userId из login
     SELECT id INTO userId FROM Users WHERE login = userLogin;
 
+     -- Получение player_id, связанного с userId
+    SELECT id INTO playerID FROM Players WHERE user_id = userId;
+
+
     -- Кол-во карт на столе
     SELECT COUNT(*) INTO cardsOnTableCount FROM TableCards WHERE lobby_id = lobbyID;
 
@@ -491,7 +501,6 @@ BEGIN
     INTO checkerID
     FROM Checks
     WHERE turn_player_id = currentPlayerID
-      AND EXISTS (SELECT 1 FROM Players WHERE id = checkerID AND lobby_id = lobbyID)
     LIMIT 1;
 
     -- Проверка результата проверки, если она была
@@ -502,11 +511,11 @@ BEGIN
     END IF;
 
     -- Вывод инфы
-    SELECT currentPlayerID, currentRank, cardsOnTableCount, cardsPlayedCount, nextPlayerID, checkerID, checkResult;
+    SELECT playerID, currentPlayerID, currentRank, cardsOnTableCount, cardsPlayedCount, nextPlayerID, checkerID, checkResult;
 
 END updateGameInfo;
 
--- Error: Result consisted of more than one row
+-- Вывести карты игрока
 CREATE PROCEDURE getPlayerCards(token INT UNSIGNED, lobbyId INT)
     COMMENT 'Получить карты игрока. Параметры: userToken, lobbyId'
 getPlayerCards:
@@ -523,7 +532,7 @@ BEGIN
     -- Получение userId из login
     SELECT id INTO userId FROM Users WHERE login = userLogin;
 
-    SELECT `rank`
+    SELECT card_id, `rank`, `suit`
     FROM PlayerCards
              JOIN Cards ON PlayerCards.card_id = Cards.id
     WHERE player_id = (SELECT id FROM Players WHERE user_id = userId AND lobby_id = lobbyId);

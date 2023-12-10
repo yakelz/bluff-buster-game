@@ -12,12 +12,12 @@ async function callProcedure(procedureName, params = []) {
 
 				reject(error.sqlMessage);
 			} else {
-				// console.log(procedureName + '\n');
-				// console.log(results);
-				// console.log('\n');
+				console.log(procedureName + '\n');
+				console.log(results);
+				console.log('\n');
 
 				// Проверяем, содержит ли results[0] один объект или несколько
-				if (results[0].length === 1) {
+				if (results[0]?.length === 1) {
 					if (results[0][0].error) {
 						reject(results[0][0].error);
 					}
