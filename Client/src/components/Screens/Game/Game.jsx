@@ -1,75 +1,54 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styles from './Game.module.css';
 import useApi from '../../../hooks/useApi';
+import useCardSelection from '../../../hooks/useCardSelection';
+import useCheckerActions from '../../../hooks/useCheckerActions';
+
 const Game = () => {
 	const { id: lobbyId } = useParams();
 	const { data, sendRequest } = useApi();
-	const { data: actionData, sendRequest: sendActionRequest } = useApi();
-	const [selectedCards, setSelectedCards] = useState([]);
+	const { sendRequest: sendActionRequest } = useApi();
+
+	const { selectedCards, toggleCardSelection, submitSelectedCards } = useCardSelection(
+		data,
+		sendActionRequest,
+		lobbyId
+	);
+	const { isChecker, handleCheck, handleDeclineCheck } = useCheckerActions(
+		data,
+		sendActionRequest,
+		lobbyId
+	);
 
 	const updateGameInfo = () => {
-		sendRequest({ url: `/game/${lobbyId}`, method: 'GET' });
+		sendRequest({
+			url: `/game/${lobbyId}`,
+			method: 'GET',
+		});
 	};
 
 	useEffect(() => {
 		updateGameInfo();
-		const interval = setInterval(() => {
-			updateGameInfo();
-		}, 5000);
+		const interval = setInterval(updateGameInfo, 5000);
 		return () => clearInterval(interval);
 	}, []);
 
-	const canPlay = data?.gameInfo?.playerID === data?.gameInfo?.currentPlayerID;
-	const isChecker = data?.gameInfo?.playerID === data?.gameInfo?.checkerID;
+	const canPlay =
+		data?.gameInfo?.playerID === data?.gameInfo?.currentPlayerID &&
+		data?.gameInfo?.checkerID === null;
 
-	const toggleCardSelection = (cardId) => {
-		if (!canPlay) return;
-		setSelectedCards((prevSelected) => {
-			const isSelected = prevSelected.includes(cardId);
-			if (isSelected) {
-				return prevSelected.filter((id) => id !== cardId);
-			} else {
-				return prevSelected.length < 4 ? [...prevSelected, cardId] : prevSelected;
-			}
+	const cardOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+	function sortCards(handCards) {
+		return handCards.sort((a, b) => {
+			let rankA = cardOrder.indexOf(a.rank);
+			let rankB = cardOrder.indexOf(b.rank);
+			return rankA - rankB;
 		});
-	};
+	}
 
-	const submitSelectedCards = () => {
-		const playerID = data?.gameInfo?.playerID;
-
-		const payload = {
-			playerID,
-			selectedCards,
-		};
-
-		sendActionRequest({
-			url: `/game/${lobbyId}/`,
-			method: 'PUT',
-			payload: payload,
-		});
-	};
-
-	const handleCheck = () => {
-		sendActionRequest({
-			url: `/game/${lobbyId}/check`,
-			method: 'POST',
-		});
-	};
-
-	const handleDeclineCheck = () => {
-		const playerID = data?.gameInfo?.playerID;
-		const turnPlayerID = data?.gameInfo?.currentPlayerID;
-
-		sendActionRequest({
-			url: `/game/${lobbyId}/decline`,
-			method: 'POST',
-			payload: {
-				checkerID: playerID,
-				turnPlayerID: turnPlayerID,
-			},
-		});
-	};
+	const sortedHandCards = data?.handCards ? sortCards(data.handCards) : [];
 
 	return (
 		<>
@@ -86,15 +65,29 @@ const Game = () => {
 					<p>Проверяющий: {data.gameInfo.checkerID || 'Нет'}</p>
 					<p>Результат проверки: {data.gameInfo.checkResult}</p>
 
+					<h2>Players</h2>
+					<ul className={styles.playerList}>
+						{data.players.map((player) => (
+							<li
+								key={player.player_id}
+								className={`${styles.player} ${
+									player.player_id === data.gameInfo.currentPlayerID ? styles.currentTurn : ''
+								}`}
+							>
+								<span>{player.login}</span>: <span>{player.card_count} cards</span>
+							</li>
+						))}
+					</ul>
+
 					<h2>My Cards</h2>
-					<div className='cards'>
-						{data.playerCards.map((card) => (
+					<div className={styles.cards}>
+						{sortedHandCards.map((card) => (
 							<div
 								key={card.card_id}
-								className={`card ${
+								className={`${styles.card} ${
 									canPlay && selectedCards.includes(card.card_id) ? styles.selected : ''
 								}`}
-								onClick={() => toggleCardSelection(card.card_id)}
+								onClick={() => toggleCardSelection(card.card_id, canPlay)}
 							>
 								{card.rank} – {card.suit}
 							</div>

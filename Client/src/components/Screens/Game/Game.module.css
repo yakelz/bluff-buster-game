@@ -1,3 +1,14 @@
+.currentTurn {
+	/* Ваш стиль для текущего игрока, например, выделение цветом */
+	color: green;
+	font-weight: bold;
+}
 .selected {
 	color: red;
+}
+
+.cards {
+}
+.card {
+	border: 1px solid black;
 }

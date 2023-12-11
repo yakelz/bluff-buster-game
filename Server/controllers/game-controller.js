@@ -16,10 +16,12 @@ class GameController {
 		try {
 			const params = [req.session.token, lobbyId];
 			const gameInfo = await callProcedure('updateGameInfo', params);
-			const playerCards = await callProcedure('getPlayerCards', params);
+			const handCards = await callProcedure('getPlayerCards', params);
+			const players = await callProcedure('getPlayersInLobby', params);
 			res.status(200).json({
 				gameInfo: gameInfo,
-				playerCards: playerCards,
+				handCards: handCards,
+				players: players,
 			});
 		} catch (error) {
 			res.status(500).json({ error: error });
@@ -49,7 +51,7 @@ class GameController {
 			const params = [req.session.token, checkerID, turnPlayerID];
 			console.log(params);
 			const result = await callProcedure('checkBluff', params);
-			res.status(200).json({ message: 'Проверка выполнена' });
+			res.status(200).json(result);
 		} catch (error) {
 			res.status(500).json({ error: error });
 		}
