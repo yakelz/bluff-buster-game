@@ -1,11 +1,20 @@
 import React from 'react';
 import LoginForm from './LoginForm/LoginForm';
+import BackButton from '../../UI/Buttons/BackButton';
+import BlurContainer from '../../UI/BlurContainer/BlurContainer';
+
 const Login = () => {
+	document.querySelector('.wrapper').className = 'wrapper';
+	document.querySelector('.wrapper').className += ' bg-left';
+
 	return (
-		<div>
-			<h1>Login</h1>
-			<LoginForm></LoginForm>
-		</div>
+		<main>
+			<BackButton></BackButton>
+			<BlurContainer>
+				<h1>Вход</h1>
+				<LoginForm></LoginForm>
+			</BlurContainer>
+		</main>
 	);
 };
 

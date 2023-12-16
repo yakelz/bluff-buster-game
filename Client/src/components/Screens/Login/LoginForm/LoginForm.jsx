@@ -5,15 +5,11 @@ import useApi from '../../../../hooks/useApi';
 
 import { useDispatch } from 'react-redux';
 import { setAuth } from '../../../../redux/auth/authSlice';
+import GameButton from '../../../UI/Buttons/GameButton';
+import GameInput from '../../../UI/GameInput/GameInput';
 
 const LoginForm = () => {
-	const {
-		register,
-		handleSubmit,
-		setError,
-		clearErrors,
-		formState: { errors },
-	} = useForm({
+	const { handleSubmit, control } = useForm({
 		defaultValues: {
 			username: 'narutka',
 			password: 'superpass123',
@@ -32,40 +28,25 @@ const LoginForm = () => {
 				alert('Вы успешно вошли в систему!');
 				dispatch(setAuth({ isAuth: true, userID: data.id }));
 			},
-			onError: (errorMessage) => {
-				setError('server', { type: 'manual', message: errorMessage || 'Ошибка на сервере' });
-			},
 		});
 	};
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
-			<div>
-				<label htmlFor='username'>Имя пользователя:</label>
-				<input
-					id='username'
-					type='text'
-					{...register('username', {
-						required: 'Введите имя пользователя',
-						onChange: () => clearErrors('server'),
-					})}
-				/>
-				{errors.username && <p className={styles.error}>{errors.username.message}</p>}
-			</div>
-			<div>
-				<label htmlFor='password'>Пароль:</label>
-				<input
-					id='password'
-					type='password'
-					{...register('password', {
-						required: 'Введите пароль',
-						onChange: () => clearErrors('server'),
-					})}
-				/>
-				{errors.password && <p className={styles.error}>{errors.password.message}</p>}
-			</div>
-			<button type='submit'>Войти</button>
-			{errors.server && <p className={styles.error}>{errors.server.message}</p>}
+			<GameInput
+				control={control}
+				name='username'
+				rules={{ required: 'Введите имя пользователя' }}
+				placeholder='Имя пользователя'
+			/>
+			<GameInput
+				control={control}
+				name='password'
+				rules={{ required: 'Введите пароль' }}
+				placeholder='Пароль'
+				type='password'
+			/>
+			<GameButton type='submit'>Войти</GameButton>
 		</form>
 	);
 };

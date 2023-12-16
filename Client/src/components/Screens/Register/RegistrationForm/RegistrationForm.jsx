@@ -4,15 +4,11 @@ import { useForm } from 'react-hook-form';
 import useApi from '../../../../hooks/useApi';
 import { useDispatch } from 'react-redux';
 import { setAuth } from '../../../../redux/auth/authSlice';
+import GameInput from '../../../UI/GameInput/GameInput';
+import GameButton from '../../../UI/Buttons/GameButton';
 
 const RegistrationForm = () => {
-	const {
-		register,
-		handleSubmit,
-		setError,
-		clearErrors,
-		formState: { errors },
-	} = useForm({
+	const { handleSubmit, control, setError } = useForm({
 		defaultValues: {
 			username: '',
 			password: '',
@@ -31,7 +27,6 @@ const RegistrationForm = () => {
 			});
 			return;
 		}
-
 		sendRequest({
 			url: '/register',
 			method: 'POST',
@@ -40,57 +35,33 @@ const RegistrationForm = () => {
 				alert('Регистрация прошла успешно!');
 				dispatch(setAuth({ isAuth: true, userID: data.id[0] }));
 			},
-			onError: (errorMessage) => {
-				setError('server', { type: 'manual', message: errorMessage || 'Ошибка на сервере' });
-			},
 		});
 	};
 
 	return (
-		<div>
-			<form onSubmit={handleSubmit(handleRegistration)}>
-				<div>
-					<label htmlFor='username'>Имя пользователя:</label>
-					<input
-						id='username'
-						type='text'
-						{...register('username', {
-							required: 'Введите имя пользователя',
-							onChange: () => clearErrors(['username', 'server']),
-						})}
-					/>
-					{errors.username && <p className={styles.error}>{errors.username.message}</p>}
-				</div>
-				<div>
-					<label htmlFor='password'>Пароль:</label>
-					<input
-						id='password'
-						type='password'
-						{...register('password', {
-							required: 'Введите пароль',
-							onChange: () => clearErrors(['password', 'server']),
-						})}
-					/>
-					{errors.password && <p className={styles.error}>{errors.password.message}</p>}
-				</div>
-				<div>
-					<label htmlFor='confirmPassword'>Подтвердите пароль:</label>
-					<input
-						id='confirmPassword'
-						type='password'
-						{...register('confirmPassword', {
-							required: 'Подтвердите пароль',
-							onChange: () => clearErrors(['confirmPassword', 'server']),
-						})}
-					/>
-					{errors.confirmPassword && (
-						<p className={styles.error}>{errors.confirmPassword.message}</p>
-					)}
-				</div>
-				{errors.server && <p className={styles.error}>{errors.server.message}</p>}
-				<button type='submit'>Зарегистрироваться</button>
-			</form>
-		</div>
+		<form onSubmit={handleSubmit(handleRegistration)}>
+			<GameInput
+				control={control}
+				name='username'
+				rules={{ required: 'Введите имя пользователя' }}
+				placeholder='Имя пользователя'
+			/>
+			<GameInput
+				control={control}
+				name='password'
+				rules={{ required: 'Введите пароль' }}
+				placeholder='Пароль'
+				type='password'
+			/>
+			<GameInput
+				control={control}
+				name='confirmPassword'
+				rules={{ required: 'Подтвердите пароль' }}
+				placeholder='Подтвердите пароль'
+				type='password'
+			/>
+			<GameButton type='submit'> Зарегистрироваться</GameButton>
+		</form>
 	);
 };
 

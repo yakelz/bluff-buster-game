@@ -1,0 +1,76 @@
+@import url('./Fonts.css');
+
+:root {
+	--btn-color: #b85f0d;
+	--container-outline: #783a00;
+	--container-blur: rgba(102, 33, 12, 0.61);
+	--input-color: #fffada;
+	--error-color: #ea0000;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	height: 100%;
+	font-family: 'Nunito', Arial, Helvetica, sans-serif;
+}
+
+.wrapper {
+	display: flex;
+	padding: 16px;
+	background-image: url('../img/backgrounds/start.png');
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	transition: background-position 0.5s ease;
+	min-height: 100vh;
+}
+
+main {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	height: calc(100vh - 32px);
+	padding: 30px;
+	overflow: hidden;
+}
+
+@media (min-width: 768px) {
+	.wrapper {
+		justify-content: center;
+	}
+	main {
+		width: 25vw;
+	}
+}
+
+.wrapper,
+main {
+	box-sizing: border-box;
+}
+
+.wrapper.bg-left {
+	background-position: 20% center;
+}
+
+.wrapper.bg-right {
+	background-position: 80% center;
+}
+
+.wrapper.bg-center {
+	background-position: center center;
+}
+
+.button-label {
+	font-family: 'Nunito';
+	font-weight: 800;
+	font-size: 18px;
+}
+
+.input-label {
+	font-family: 'Nunito';
+	font-size: 16px;
+	font-weight: 700;
+}
