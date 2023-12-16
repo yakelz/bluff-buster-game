@@ -9,8 +9,8 @@ const Register = () => {
 
 	return (
 		<main>
+			<BackButton></BackButton>
 			<BlurContainer>
-				<h1>Регистрация</h1>
 				<RegistrationForm></RegistrationForm>
 			</BlurContainer>
 		</main>

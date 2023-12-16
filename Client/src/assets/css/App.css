@@ -27,6 +27,20 @@ body {
 	min-height: 100vh;
 }
 
+.animate {
+	animation: moveBackground 200s linear infinite;
+}
+
+@keyframes moveBackground {
+	0%,
+	100% {
+		background-position: left center;
+	}
+	50% {
+		background-position: right center;
+	}
+}
+
 main {
 	display: flex;
 	flex-direction: column;
@@ -61,6 +75,15 @@ main {
 
 .wrapper.bg-center {
 	background-position: center center;
+}
+
+form {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding: 45px 30px 30px 30px;
+	gap: 34px;
 }
 
 .button-label {

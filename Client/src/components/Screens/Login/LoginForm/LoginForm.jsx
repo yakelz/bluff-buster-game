@@ -33,20 +33,23 @@ const LoginForm = () => {
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
-			<GameInput
-				control={control}
-				name='username'
-				rules={{ required: 'Введите имя пользователя' }}
-				placeholder='Имя пользователя'
-			/>
-			<GameInput
-				control={control}
-				name='password'
-				rules={{ required: 'Введите пароль' }}
-				placeholder='Пароль'
-				type='password'
-			/>
-			<GameButton type='submit'>Войти</GameButton>
+			<div className={styles.container}>
+				<h1>Вход</h1>
+				<GameInput
+					control={control}
+					name='username'
+					rules={{ required: 'Введите имя пользователя' }}
+					placeholder='Имя пользователя'
+				/>
+				<GameInput
+					control={control}
+					name='password'
+					rules={{ required: 'Введите пароль' }}
+					placeholder='Пароль'
+					type='password'
+				/>
+				<GameButton type='submit'>Войти</GameButton>
+			</div>
 		</form>
 	);
 };

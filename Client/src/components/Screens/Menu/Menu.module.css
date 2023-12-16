@@ -1,0 +1,12 @@
+.wrapper {
+	animation: moveBackground 20s linear infinite;
+}
+@keyframes moveBackground {
+	0%,
+	100% {
+		background-position: left center;
+	}
+	50% {
+		background-position: right center;
+	}
+}

@@ -1,8 +1,20 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useApi from '../../../hooks/useApi';
+import styles from './Menu.module.css';
+
+import bg from '../../../assets/img/backgrounds/menu.png';
+import BlurContainer from '../../UI/BlurContainer/BlurContainer';
+import GameButton from '../../UI/Buttons/GameButton';
 
 const Menu = () => {
+	useEffect(() => {
+		const wrapper = document.querySelector('.wrapper');
+		wrapper.style.backgroundImage = `url(${bg})`;
+		wrapper.className = 'wrapper';
+		wrapper.className += ' animate';
+	}, []);
+
 	const navigate = useNavigate();
 	const { data, sendRequest } = useApi();
 
@@ -47,35 +59,40 @@ const Menu = () => {
 					<Link to='/settings'>Settings</Link>
 					<button onClick={logout}>Logout</button>
 
-					<div>
-						<h2>UserInfo</h2>
-						<p>Login: {data.userInfo.login}</p>
+					<BlurContainer>
+						<p>{data.userInfo.login}</p>
 						<p>Win Count: {data.userInfo.win_count}</p>
-					</div>
+					</BlurContainer>
 
-					<div>
+					<BlurContainer>
 						<h2>Current Games</h2>
 						{data.currentGames &&
 							data.currentGames.map((game, index) => (
 								<div key={game.id}>
 									<p>Lobby ID: {game.id}</p>
-									<p>Users Count: {game.userCount}</p>
-									<Link to={`/lobby/${game.id}`}>Return {game.id}</Link>
+									<p>{game.userCount} / 4</p>
+									<GameButton
+										onClick={() => {
+											navigate(`/lobby/${game.id}`);
+										}}
+									>
+										Return
+									</GameButton>
 								</div>
 							))}
-					</div>
+					</BlurContainer>
 
-					<div>
+					<BlurContainer>
 						<h2>Available Games</h2>
 						{data.availableGames &&
 							data.availableGames.map((game, index) => (
 								<div key={game.lobby_id}>
 									<p>Lobby ID: {game.lobby_id}</p>
 									<p>Users Count: {game.usersCount}</p>
-									<button onClick={() => enterLobby(game.lobby_id)}>Enter</button>
+									<GameButton onClick={() => enterLobby(game.lobby_id)}>Enter</GameButton>
 								</div>
 							))}
-					</div>
+					</BlurContainer>
 
 					<div>
 						<h2>Create Lobby</h2>

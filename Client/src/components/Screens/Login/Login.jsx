@@ -11,7 +11,6 @@ const Login = () => {
 		<main>
 			<BackButton></BackButton>
 			<BlurContainer>
-				<h1>Вход</h1>
 				<LoginForm></LoginForm>
 			</BlurContainer>
 		</main>

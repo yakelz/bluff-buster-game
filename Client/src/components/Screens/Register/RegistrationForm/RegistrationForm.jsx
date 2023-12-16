@@ -40,27 +40,30 @@ const RegistrationForm = () => {
 
 	return (
 		<form onSubmit={handleSubmit(handleRegistration)}>
-			<GameInput
-				control={control}
-				name='username'
-				rules={{ required: 'Введите имя пользователя' }}
-				placeholder='Имя пользователя'
-			/>
-			<GameInput
-				control={control}
-				name='password'
-				rules={{ required: 'Введите пароль' }}
-				placeholder='Пароль'
-				type='password'
-			/>
-			<GameInput
-				control={control}
-				name='confirmPassword'
-				rules={{ required: 'Подтвердите пароль' }}
-				placeholder='Подтвердите пароль'
-				type='password'
-			/>
-			<GameButton type='submit'> Зарегистрироваться</GameButton>
+			<div className={styles.container}>
+				<h1>Регистрация</h1>
+				<GameInput
+					control={control}
+					name='username'
+					rules={{ required: 'Введите имя пользователя' }}
+					placeholder='Имя пользователя'
+				/>
+				<GameInput
+					control={control}
+					name='password'
+					rules={{ required: 'Введите пароль' }}
+					placeholder='Пароль'
+					type='password'
+				/>
+				<GameInput
+					control={control}
+					name='confirmPassword'
+					rules={{ required: 'Подтвердите пароль' }}
+					placeholder='Подтвердите пароль'
+					type='password'
+				/>
+				<GameButton type='submit'> Зарегистрироваться</GameButton>
+			</div>
 		</form>
 	);
 };
