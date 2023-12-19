@@ -32,22 +32,24 @@ const LoginForm = () => {
 	};
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)}>
+		<form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
 			<div className={styles.container}>
 				<h1>Вход</h1>
-				<GameInput
-					control={control}
-					name='username'
-					rules={{ required: 'Введите имя пользователя' }}
-					placeholder='Имя пользователя'
-				/>
-				<GameInput
-					control={control}
-					name='password'
-					rules={{ required: 'Введите пароль' }}
-					placeholder='Пароль'
-					type='password'
-				/>
+				<div className={styles.inputs}>
+					<GameInput
+						control={control}
+						name='username'
+						rules={{ required: 'Введите имя пользователя' }}
+						placeholder='Имя пользователя'
+					/>
+					<GameInput
+						control={control}
+						name='password'
+						rules={{ required: 'Введите пароль' }}
+						placeholder='Пароль'
+						type='password'
+					/>
+				</div>
 				<GameButton type='submit'>Войти</GameButton>
 			</div>
 		</form>

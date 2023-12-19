@@ -1,0 +1,11 @@
+.button-label {
+	font-family: inherit;
+	font-weight: 800;
+	font-size: 18px;
+}
+
+.input-label {
+	font-family: inherit;
+	font-size: 16px;
+	font-weight: 700;
+}

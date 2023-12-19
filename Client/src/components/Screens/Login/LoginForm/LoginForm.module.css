@@ -5,3 +5,9 @@
 	align-items: center;
 	gap: 34px;
 }
+.inputs {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	width: 100%;
+}

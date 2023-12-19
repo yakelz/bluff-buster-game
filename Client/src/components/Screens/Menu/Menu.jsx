@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import useApi from '../../../hooks/useApi';
 import styles from './Menu.module.css';
 
+import logo from '../../../assets/img/logo.png';
 import bg from '../../../assets/img/backgrounds/menu.png';
 import BlurContainer from '../../UI/BlurContainer/BlurContainer';
 import GameButton from '../../UI/Buttons/GameButton';
+import WinCount from '../../UI/WinCount/WinCount';
 
 const Menu = () => {
 	useEffect(() => {
@@ -53,15 +55,18 @@ const Menu = () => {
 			{!data ? (
 				<div>Загрузка данных...</div>
 			) : (
-				<div>
-					<h1>Menu</h1>
+				<div className={styles.menu}>
+					<header>
+						<img className={styles.logo} src={logo} alt='logo' />
+						<GameButton>Правила</GameButton>
+					</header>
 					<Link to='/ratings'>Ratings</Link>
 					<Link to='/settings'>Settings</Link>
 					<button onClick={logout}>Logout</button>
 
-					<BlurContainer>
+					<BlurContainer style={styles.userInfo}>
 						<p>{data.userInfo.login}</p>
-						<p>Win Count: {data.userInfo.win_count}</p>
+						<WinCount count={data.userInfo.win_count} />
 					</BlurContainer>
 
 					<BlurContainer>

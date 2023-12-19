@@ -1,6 +1,27 @@
 .wrapper {
 	animation: moveBackground 20s linear infinite;
 }
+
+.menu {
+	display: flex;
+	flex-direction: column;
+	height: calc(100vh - 32px);
+	overflow: hidden;
+	width: 100%;
+}
+
+.logo {
+	width: 50%;
+	float: left;
+}
+
+.userInfo {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 20px 28px;
+}
+
 @keyframes moveBackground {
 	0%,
 	100% {
@@ -8,5 +29,14 @@
 	}
 	50% {
 		background-position: right center;
+	}
+}
+
+@media (min-width: 768px) {
+	.logo {
+		width: 50%;
+	}
+	.menu {
+		max-width: 30vw;
 	}
 }

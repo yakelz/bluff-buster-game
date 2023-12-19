@@ -1,9 +1,17 @@
-img {
+.logo {
 	width: 100%;
-	margin-bottom: 70px;
+	margin-bottom: 50px;
 }
+
+.container {
+	padding: 30px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
 @media (min-width: 768px) {
 	.content {
-		max-width: 20vw;
+		max-width: 30vw;
 	}
 }

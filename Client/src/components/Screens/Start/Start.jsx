@@ -12,21 +12,23 @@ const Start = () => {
 	return (
 		<main>
 			<div className={styles.content}>
-				<img src={logo} alt='logo' />
-				<GameButton
-					onClick={() => {
-						navigate('/login');
-					}}
-				>
-					Вход
-				</GameButton>
-				<GameButton
-					onClick={() => {
-						navigate('/register');
-					}}
-				>
-					Регистрация
-				</GameButton>
+				<img className={styles.logo} src={logo} alt='logo' />
+				<div className={styles.container}>
+					<GameButton
+						onClick={() => {
+							navigate('/login');
+						}}
+					>
+						Вход
+					</GameButton>
+					<GameButton
+						onClick={() => {
+							navigate('/register');
+						}}
+					>
+						Регистрация
+					</GameButton>
+				</div>
 			</div>
 		</main>
 	);
