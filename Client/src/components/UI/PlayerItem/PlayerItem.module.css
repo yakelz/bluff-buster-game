@@ -1,0 +1,23 @@
+.player {
+	display: flex;
+	width: 110px;
+	align-items: center;
+	gap: 5px;
+	background-color: white;
+	color: black;
+	padding: 5px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 900;
+}
+
+.info {
+	flex-grow: 1;
+	overflow: hidden;
+}
+.info span {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap; /* Убедитесь, что текст не переносится */
+	max-width: 100%; /* Установите максимальную ширину */
+}

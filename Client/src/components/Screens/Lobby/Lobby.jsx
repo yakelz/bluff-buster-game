@@ -3,6 +3,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import useApi from '../../../hooks/useApi';
 import { useDispatch, useSelector } from 'react-redux';
 import { setLobbySettings } from '../../../redux/lobby/lobbySlice';
+import Header from '../../UI/Header/Header';
+import BlurContainer from '../../UI/BlurContainer/BlurContainer';
+import GameButtonIco from '../../UI/Buttons/GameButtonIco';
+import { ReactComponent as BackIco } from '../../../assets/icons/back.svg';
+import styles from './Lobby.module.css';
 
 const Lobby = () => {
 	const navigate = useNavigate();
@@ -87,42 +92,46 @@ const Lobby = () => {
 	}, [data, userID, dispatch, isHost]);
 
 	return (
-		<>
+		<main>
 			{!data ? (
 				<div>Загрузка данных...</div>
 			) : (
 				<>
-					<h1>Lobby</h1>
-					<button onClick={leaveLobby}>Leave</button>
-					<h2>Игроки</h2>
-					<ul>
-						{data.usersInLobby &&
-							data.usersInLobby.map((user, index) => (
-								<li key={user.login}>
-									{data.host && data.host.host_id === user.user_id && <span> (host)</span>}
-									{user.login} - Побед: {user.win_count}
-									<input type='checkbox' checked={user.is_ready === 1} disabled />
-								</li>
-							))}
-					</ul>
+					<Header />
+					<BlurContainer>
+						<div className={styles.title}>
+							<GameButtonIco Ico={BackIco} onClick={leaveLobby} />
+							<h3>Игровая комната</h3>
+						</div>
+						<ul>
+							{data.usersInLobby &&
+								data.usersInLobby.map((user, index) => (
+									<li key={user.login}>
+										{data.host && data.host.host_id === user.user_id && <span> (host)</span>}
+										{user.login} - Побед: {user.win_count}
+										<input type='checkbox' checked={user.is_ready === 1} disabled />
+									</li>
+								))}
+						</ul>
 
-					<div>
-						{data.lobbySettings && (
-							<>
-								{data.lobbySettings.hasPassword === 0 ? 'Без пароля' : 'С паролем'}
-								<p>Время на ход: {data.lobbySettings.turn_time}</p>
-								<p>Время на проверку: {data.lobbySettings.check_time}</p>
-							</>
-						)}
-						<button onClick={toggleReady}>{isReady ? 'Отменить готовность' : 'Готов'}</button>
-						{isHost && (
-							<Link to={`/lobby/${lobbyId}/settings`}>Изменить настройки лобби {lobbyId}</Link>
-						)}
-						{isHost && allReady && <button onClick={startGame}>Начать игру</button>}
-					</div>
+						<div>
+							{data.lobbySettings && (
+								<>
+									{data.lobbySettings.hasPassword === 0 ? 'Без пароля' : 'С паролем'}
+									<p>Время на ход: {data.lobbySettings.turn_time}</p>
+									<p>Время на проверку: {data.lobbySettings.check_time}</p>
+								</>
+							)}
+							<button onClick={toggleReady}>{isReady ? 'Отменить готовность' : 'Готов'}</button>
+							{isHost && (
+								<Link to={`/lobby/${lobbyId}/settings`}>Изменить настройки лобби {lobbyId}</Link>
+							)}
+							{isHost && allReady && <button onClick={startGame}>Начать игру</button>}
+						</div>
+					</BlurContainer>
 				</>
 			)}
-		</>
+		</main>
 	);
 };
 

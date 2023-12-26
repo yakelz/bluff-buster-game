@@ -1,9 +1,9 @@
 import React from 'react';
 const Ratings = () => {
 	return (
-		<div>
+		<main>
 			<h1>Ratings</h1>
-		</div>
+		</main>
 	);
 };
 

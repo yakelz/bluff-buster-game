@@ -8,6 +8,7 @@ const CreateLobby = () => {
 	const navigate = useNavigate();
 
 	const onSubmit = (values) => {
+		console.log(values);
 		sendRequest({
 			url: '/lobby/',
 			method: 'POST',
@@ -16,7 +17,11 @@ const CreateLobby = () => {
 		});
 	};
 
-	return <LobbySettingsForm title='Создать' onSubmit={onSubmit} />;
+	return (
+		<main>
+			<LobbySettingsForm title='Создать' onSubmit={onSubmit} />
+		</main>
+	);
 };
 
 export default CreateLobby;
