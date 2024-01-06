@@ -1,14 +1,45 @@
 .rank {
-	width: 35px;
-	height: 35px;
+	width: 40px;
+	height: 40px;
 	color: white;
-	background: linear-gradient(to bottom, #eb9a19 0%, #982300 100%);
 	border: 3px solid rgb(65, 65, 65);
 	border-radius: 8px;
 	box-shadow: 0px 1px 5px 0px rgba(0, 0, 0, 0.2), 0px 3px 4px 0px rgba(0, 0, 0, 0.12),
 		0px 2px 4px 0px rgba(0, 0, 0, 0.14);
 	position: relative;
 	flex-shrink: 0;
+}
+
+.first {
+	background: linear-gradient(to bottom, #f9e100 0%, #c78300 100%);
+}
+
+.first::before {
+	background: #d9a900;
+}
+
+.second {
+	background: linear-gradient(to bottom, #e6e5e5 0%, #818181 100%);
+}
+
+.second::before {
+	background: #c7c5c5;
+}
+
+.third {
+	background: linear-gradient(to bottom, #f5c37b 0%, #b8530b 100%);
+}
+
+.third::before {
+	background: #ce8448;
+}
+
+.other {
+	background: linear-gradient(to bottom, #b8b8b8 0%, #4a4a4a 100%);
+}
+
+.other::before {
+	background: #7c7c7c;
 }
 
 .rank::before {
@@ -19,7 +50,6 @@
 	right: 2px;
 	bottom: 2px;
 	border-radius: 4px;
-	background: var(--btn-color);
 }
 
 .rank span {

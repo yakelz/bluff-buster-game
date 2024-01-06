@@ -12,7 +12,7 @@ const LoginForm = () => {
 	const { handleSubmit, control } = useForm({
 		defaultValues: {
 			username: 'narutka',
-			password: 'superpass123',
+			password: '123hack123',
 		},
 	});
 

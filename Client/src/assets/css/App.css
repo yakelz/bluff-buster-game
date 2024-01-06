@@ -32,7 +32,7 @@ body {
 }
 
 .animate {
-	animation: moveBackground 200s linear infinite;
+	animation: moveBackground 400s linear infinite;
 }
 
 @keyframes moveBackground {

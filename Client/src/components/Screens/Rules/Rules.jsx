@@ -1,9 +1,9 @@
 import React from 'react';
 const Rules = () => {
 	return (
-		<div>
+		<main>
 			<h1>Rules</h1>
-		</div>
+		</main>
 	);
 };
 

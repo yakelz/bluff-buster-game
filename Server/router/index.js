@@ -12,7 +12,8 @@ router.post('/login', userController.login);
 router.post('/logout', tokenValidator, userController.logout);
 router.get('/checkToken', tokenValidator, userController.checkToken);
 
-router.get('/menu', tokenValidator, menuController.getUserInfo);
+router.get('/menu', tokenValidator, menuController.getMenu);
+router.get('/search', tokenValidator, menuController.getAvailableGames);
 
 router.post('/lobby', tokenValidator, lobbyController.createLobby);
 router.post('/lobby/:id', tokenValidator, lobbyController.enterLobby);

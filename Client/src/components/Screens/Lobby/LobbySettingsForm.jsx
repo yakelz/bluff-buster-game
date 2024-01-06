@@ -4,6 +4,7 @@ import BlurContainer from '../../UI/BlurContainer/BlurContainer';
 import styles from './Lobby.module.css';
 import GameButton from '../../UI/Buttons/GameButton';
 import GameInput from '../../UI/GameInput/GameInput';
+import Checkbox from '../../UI/Checkbox/Checkbox';
 
 const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
 	console.log(initialData);
@@ -25,8 +26,8 @@ const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<h1>{title} лобби</h1>
 				<div>
-					<label htmlFor='turn_time'>Время хода (сек):</label>
-					<select id='turn_time' {...register('turn_time')}>
+					<label htmlFor='turn_time'>Время хода (сек)</label>
+					<select className={styles.select} id='turn_time' {...register('turn_time')}>
 						<option value='10'>10</option>
 						<option value='15'>15</option>
 						<option value='20'>20</option>
@@ -36,8 +37,8 @@ const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
 					{errors.turn_time && <p>{errors.turn_time.message}</p>}
 				</div>
 				<div>
-					<label htmlFor='check_time'>Время проверки (сек):</label>
-					<select id='check_time' {...register('check_time')}>
+					<label htmlFor='check_time'>Время проверки (сек)</label>
+					<select className={styles.select} id='check_time' {...register('check_time')}>
 						<option value='10'>10</option>
 						<option value='15'>15</option>
 						<option value='20'>20</option>
@@ -45,11 +46,10 @@ const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
 						<option value='30'>30</option>
 					</select>
 				</div>
-				<div>
+				<div className={styles.private}>
 					<label htmlFor='privateRoom'>Приватная комната</label>
-					<input
+					<Checkbox
 						id='privateRoom'
-						type='checkbox'
 						{...register('isPrivate')}
 						checked={isPrivate}
 						onChange={() => setIsPrivate(!isPrivate)}

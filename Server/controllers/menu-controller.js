@@ -1,30 +1,44 @@
 const callProcedure = require('../db/call');
 
 class MenuController {
-	async getUserInfo(req, res, next) {
+	async getMenu(req, res, next) {
 		try {
 			const params = [req.session.token];
 			const userInfo = await callProcedure('showUserInfo', params);
 			let currentGames = await callProcedure('getCurrentGames', params);
-			let availableGames = await callProcedure('showAvailableGames', params);
 
 			currentGames = Array.isArray(currentGames)
 				? currentGames
 				: currentGames
 				? [currentGames]
 				: [];
+
+			console.log(currentGames);
+
+			res.status(200).json({
+				userInfo: userInfo,
+				currentGames: currentGames,
+			});
+		} catch (error) {
+			console.log(error);
+			res.status(500).json({ error: error });
+		}
+	}
+
+	async getAvailableGames(req, res, next) {
+		try {
+			const params = [req.session.token];
+			let availableGames = await callProcedure('showAvailableGames', params);
+
 			availableGames = Array.isArray(availableGames)
 				? availableGames
 				: availableGames
 				? [availableGames]
 				: [];
 
-			console.log(currentGames);
 			console.log(availableGames);
 
 			res.status(200).json({
-				userInfo: userInfo,
-				currentGames: currentGames,
 				availableGames: availableGames,
 			});
 		} catch (error) {

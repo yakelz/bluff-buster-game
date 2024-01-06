@@ -2,7 +2,11 @@ import React, { useEffect } from 'react';
 import BlurContainer from '../../UI/BlurContainer/BlurContainer';
 import useApi from '../../../hooks/useApi';
 import { useNavigate } from 'react-router-dom';
-import GameButton from '../../UI/Buttons/GameButton';
+
+import styles from './Search.module.css';
+import LobbyItem from '../../UI/LobbyItem/LobbyItem';
+
+import { FallingLines } from 'react-loader-spinner';
 
 function Search() {
 	const { data, sendRequest } = useApi();
@@ -17,7 +21,8 @@ function Search() {
 	};
 
 	const fetchData = () => {
-		sendRequest({ url: '/menu', method: 'GET' });
+		sendRequest({ url: '/search', method: 'GET' });
+		console.log(data);
 	};
 
 	useEffect(() => {
@@ -31,20 +36,36 @@ function Search() {
 	}, []);
 
 	return (
-		<div>
-			Search
-			<BlurContainer>
-				<h2>Available Games</h2>
-				{data.availableGames &&
-					data.availableGames.map((game, index) => (
-						<div key={game.lobby_id}>
-							<p>Lobby ID: {game.lobby_id}</p>
-							<p>Users Count: {game.usersCount}</p>
-							<GameButton onClick={() => enterLobby(game.lobby_id)}>Enter</GameButton>
-						</div>
-					))}
-			</BlurContainer>
-		</div>
+		<>
+			{!data ? (
+				<main>
+					<FallingLines
+						color='white'
+						width='100'
+						visible={true}
+						ariaLabel='falling-circles-loading'
+					/>
+				</main>
+			) : (
+				<div className={styles.menu}>
+					<BlurContainer style={styles.games}>
+						<h3>Список игр</h3>
+						{data.availableGames &&
+							data.availableGames.map((game, index) => (
+								<LobbyItem
+									title='Lobby'
+									key={game.id}
+									userCount={game.userCount}
+									gameId={game.id}
+									onButtonClick={() => {
+										enterLobby(game.id);
+									}}
+								/>
+							))}
+					</BlurContainer>
+				</div>
+			)}
+		</>
 	);
 }
 

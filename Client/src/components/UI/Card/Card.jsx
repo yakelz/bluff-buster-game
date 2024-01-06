@@ -6,7 +6,7 @@ import Diamonds from '../../../assets/img/cards/Diamonds.svg';
 import Hearts from '../../../assets/img/cards/Hearts.svg';
 import Spades from '../../../assets/img/cards/Spades.svg';
 
-function Card({ rank, suit }) {
+function Card({ rank, suit, className, onClick }) {
 	const suitImages = {
 		C: Club,
 		D: Diamonds,
@@ -14,8 +14,9 @@ function Card({ rank, suit }) {
 		S: Spades,
 	};
 	const suitImage = suitImages[suit] || Hearts;
+
 	return (
-		<div className={styles.card}>
+		<div className={`${styles.card} ${className}`} onClick={onClick}>
 			<div className={styles.top}>
 				<span>{rank}</span>
 				<img src={suitImage} alt='suit' />

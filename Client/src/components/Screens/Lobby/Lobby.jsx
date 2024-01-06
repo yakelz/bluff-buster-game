@@ -8,6 +8,9 @@ import BlurContainer from '../../UI/BlurContainer/BlurContainer';
 import GameButtonIco from '../../UI/Buttons/GameButtonIco';
 import { ReactComponent as BackIco } from '../../../assets/icons/back.svg';
 import styles from './Lobby.module.css';
+import LobbyPlayer from '../../UI/LobbyPlayer/LobbyPlayer';
+import GameButton from '../../UI/Buttons/GameButton';
+import { FallingLines } from 'react-loader-spinner';
 
 const Lobby = () => {
 	const navigate = useNavigate();
@@ -91,26 +94,41 @@ const Lobby = () => {
 		}
 	}, [data, userID, dispatch, isHost]);
 
+	// Находим Nickname хоста
+	const hostNickname = data?.usersInLobby?.find(
+		(user) => user.user_id === data?.host?.host_id
+	)?.login;
+
 	return (
 		<main>
 			{!data ? (
-				<div>Загрузка данных...</div>
+				<main>
+					<FallingLines
+						color='white'
+						width='100'
+						visible={true}
+						ariaLabel='falling-circles-loading'
+					/>
+				</main>
 			) : (
 				<>
 					<Header />
-					<BlurContainer>
+					<BlurContainer style={styles.lobby}>
 						<div className={styles.title}>
 							<GameButtonIco Ico={BackIco} onClick={leaveLobby} />
-							<h3>Игровая комната</h3>
+							<h3>Комната игрока {hostNickname}</h3>
 						</div>
-						<ul>
+						<ul className={styles.players}>
 							{data.usersInLobby &&
 								data.usersInLobby.map((user, index) => (
-									<li key={user.login}>
-										{data.host && data.host.host_id === user.user_id && <span> (host)</span>}
-										{user.login} - Побед: {user.win_count}
-										<input type='checkbox' checked={user.is_ready === 1} disabled />
-									</li>
+									<LobbyPlayer
+										key={user.login}
+										rank={2}
+										nickname={user.login}
+										winCount={user.win_count}
+										check={user.is_ready === 1}
+										isHost={data.host && data.host.host_id === user.user_id}
+									/>
 								))}
 						</ul>
 
@@ -122,11 +140,23 @@ const Lobby = () => {
 									<p>Время на проверку: {data.lobbySettings.check_time}</p>
 								</>
 							)}
-							<button onClick={toggleReady}>{isReady ? 'Отменить готовность' : 'Готов'}</button>
-							{isHost && (
-								<Link to={`/lobby/${lobbyId}/settings`}>Изменить настройки лобби {lobbyId}</Link>
-							)}
-							{isHost && allReady && <button onClick={startGame}>Начать игру</button>}
+							<div className={styles.buttons}>
+								{!isHost && (
+									<GameButton onClick={toggleReady}>
+										{isReady ? 'Отменить готовность' : 'Готов'}
+									</GameButton>
+								)}
+								{isHost && (
+									<GameButton
+										onClick={() => {
+											navigate(`/lobby/${lobbyId}/settings`);
+										}}
+									>
+										Изменить настройки
+									</GameButton>
+								)}
+							</div>
+							{isHost && allReady && <GameButton onClick={startGame}>Начать игру</GameButton>}
 						</div>
 					</BlurContainer>
 				</>

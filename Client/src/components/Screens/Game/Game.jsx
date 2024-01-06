@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import styles from './Game.module.css';
 import useApi from '../../../hooks/useApi';
-import bg from '../../../assets/img/backgrounds/game.jpg';
+import bg from '../../../assets/img/backgrounds/game.png';
 import useCardSelection from '../../../hooks/useCardSelection';
 import useCheckerActions from '../../../hooks/useCheckerActions';
 import Card from '../../UI/Card/Card';
@@ -18,6 +18,7 @@ import { ReactComponent as QuestionIco } from '../../../assets/icons/question.sv
 import { ReactComponent as AutoplayIco } from '../../../assets/icons/autoplay.svg';
 
 import GameButton from '../../UI/Buttons/GameButton';
+import { FallingLines } from 'react-loader-spinner';
 const Game = () => {
 	useEffect(() => {
 		const wrapper = document.querySelector('.wrapper');
@@ -72,13 +73,39 @@ const Game = () => {
 
 	const sortedHandCards = data?.handCards ? sortCards(data.handCards) : [];
 
+	const getCardsPlayedCountText = (count) => {
+		switch (count) {
+			case 1:
+				return 'одну';
+			case 2:
+				return 'две';
+			case 3:
+				return 'три';
+			case 4:
+				return 'четыре';
+			default:
+				return '';
+		}
+	};
+
 	const index = data?.players?.findIndex((player) => player.player_id === data?.gameInfo?.playerID);
 	data?.players?.unshift(data?.players?.splice(index, 1)[0]);
+
+	const currentPlayer = data?.players?.find(
+		(player) => player.player_id === data.gameInfo.currentPlayerID
+	);
 
 	return (
 		<>
 			{!data ? (
-				<div>Загрузка данных...</div>
+				<main>
+					<FallingLines
+						color='white'
+						width='100'
+						visible={true}
+						ariaLabel='falling-circles-loading'
+					/>
+				</main>
 			) : (
 				<main>
 					<div className={styles.buttons}>
@@ -101,7 +128,7 @@ const Game = () => {
 										player.player_id === data.gameInfo.currentPlayerID ? styles.currentTurn : ''
 									}`}
 								>
-									<PlayerItem playerRank='1' nickname={player.login} check_count='2' />
+									<PlayerItem playerRank={5} nickname={player.login} check_count='3' />
 								</li>
 							))}
 						</ul>
@@ -118,11 +145,23 @@ const Game = () => {
 						<span className={styles.counter}>{data.gameInfo.cardsOnTableCount}</span>
 						<div className={styles.info__title}>
 							<span>
-								Yakel положил три <strong>{data.gameInfo.currentRank}</strong>
+								{currentPlayer ? currentPlayer.login : 'Неизвестный игрок'} положил{' '}
+								{getCardsPlayedCountText(data.gameInfo.cardsPlayedCount)}{' '}
+								<strong>{data.gameInfo.currentRank}</strong>
 							</span>
 						</div>
 
-						<GameButton> Проверить </GameButton>
+						{isChecker && (
+							<>
+								<GameButton onClick={handleCheck}>Проверить</GameButton>
+								<GameButton onClick={handleDeclineCheck}>Отклонить проверку</GameButton>
+							</>
+						)}
+						{canPlay && (
+							<GameButton onClick={submitSelectedCards}>
+								Сыграть {getCardsPlayedCountText(selectedCards.length)} {data.gameInfo.currentRank}
+							</GameButton>
+						)}
 					</div>
 
 					<div className={styles.cards}>
@@ -131,18 +170,15 @@ const Game = () => {
 								key={card.card_id}
 								rank={card.rank}
 								suit={card.suit}
-								className={canPlay && selectedCards.includes(card.card_id) ? styles.selected : ''}
+								className={
+									canPlay && selectedCards.includes(card.card_id)
+										? `${styles.card} ${styles.cardSelected}`
+										: styles.card
+								}
 								onClick={() => toggleCardSelection(card.card_id, canPlay)}
 							/>
 						))}
 					</div>
-					{canPlay && <button onClick={submitSelectedCards}>Play Selected Cards</button>}
-					{isChecker && (
-						<div>
-							<button onClick={handleCheck}>Проверить</button>
-							<button onClick={handleDeclineCheck}>Отклонить проверку</button>
-						</div>
-					)}
 				</main>
 			)}
 		</>

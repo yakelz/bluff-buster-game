@@ -13,10 +13,10 @@ const Settings = () => {
 	};
 
 	return (
-		<div>
+		<main>
 			<h1>Settings</h1>
 			<button onClick={logout}>Logout</button>
-		</div>
+		</main>
 	);
 };
 
