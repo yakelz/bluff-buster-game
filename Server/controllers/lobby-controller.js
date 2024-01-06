@@ -3,11 +3,13 @@ const executeQuery = require('../db/execute');
 
 class LobbyController {
 	async enterLobby(req, res, next) {
+		const { password } = req.body;
 		const lobbyId = req.params.id;
 
 		console.log(req.params);
 		try {
-			const params = [req.session.token, lobbyId];
+			const params = [req.session.token, lobbyId, password];
+			console.log(params);
 			const result = await callProcedure('enterLobby', params);
 			res.status(200).json({ message: 'Вход в лобби выполнен' });
 		} catch (error) {

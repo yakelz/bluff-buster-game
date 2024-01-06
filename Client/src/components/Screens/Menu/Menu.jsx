@@ -4,6 +4,7 @@ import styles from './Menu.module.css';
 import BlurContainer from '../../UI/BlurContainer/BlurContainer';
 import WinCount from '../../UI/WinCount/WinCount';
 import LobbyItem from '../../UI/LobbyItem/LobbyItem';
+import GameButton from '../../UI/Buttons/GameButton';
 import { useNavigate } from 'react-router-dom';
 import PlayerRank from '../../UI/PlayerRank/PlayerRank';
 import { FallingLines } from 'react-loader-spinner';
@@ -48,17 +49,38 @@ const Menu = () => {
 					</BlurContainer>
 
 					<BlurContainer style={styles.currentGames}>
-						<h3>Текущие игры</h3>
-						{data.currentGames &&
-							data.currentGames.map((game, index) => (
-								<LobbyItem
-									title='Lobby'
-									key={game.id}
-									userCount={game.userCount}
-									gameId={game.id}
-									onButtonClick={() => navigate(`/lobby/${game.id}`)}
-								/>
-							))}
+						{data.currentGames && data.currentGames.length > 0 ? (
+							<>
+								<h3>Текущие игры</h3>
+								{data.currentGames.map((game, index) => (
+									<LobbyItem
+										title={`#${game.id} Комната ${game.hostLogin}`}
+										key={game.id}
+										userCount={game.userCount}
+										gameId={game.id}
+										onButtonClick={() => navigate(`/lobby/${game.id}`)}
+									/>
+								))}
+							</>
+						) : (
+							<>
+								<h3>Активных игр нет</h3>
+								<GameButton
+									onClick={() => {
+										navigate('/search');
+									}}
+								>
+									Найти игру
+								</GameButton>
+								<GameButton
+									onClick={() => {
+										navigate('/create');
+									}}
+								>
+									Создать игру
+								</GameButton>
+							</>
+						)}
 					</BlurContainer>
 				</div>
 			)}

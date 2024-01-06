@@ -52,3 +52,7 @@
 .gameItem button::before {
 	border-radius: 8px;
 }
+
+.lock {
+	margin-left: 8px;
+}

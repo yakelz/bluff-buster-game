@@ -1,23 +1,36 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import BlurContainer from '../../UI/BlurContainer/BlurContainer';
 import useApi from '../../../hooks/useApi';
 import { useNavigate } from 'react-router-dom';
 
 import styles from './Search.module.css';
 import LobbyItem from '../../UI/LobbyItem/LobbyItem';
+import PasswordModal from '../../UI/PasswordModal/PasswordModal';
 
 import { FallingLines } from 'react-loader-spinner';
 
 function Search() {
 	const { data, sendRequest } = useApi();
 	const navigate = useNavigate();
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [selectedLobby, setSelectedLobby] = useState(null);
 
-	const enterLobby = (lobbyId) => {
+	const enterLobby = (lobbyId, password = null) => {
 		sendRequest({
 			url: `/lobby/${lobbyId}`,
+			payload: { password },
 			method: 'POST',
 			onSuccess: () => navigate(`/lobby/${lobbyId}`),
 		});
+	};
+
+	const onLobbyClick = (lobby) => {
+		if (lobby.hasPassword) {
+			setSelectedLobby(lobby);
+			setIsModalOpen(true);
+		} else {
+			enterLobby(lobby.id);
+		}
 	};
 
 	const fetchData = () => {
@@ -38,7 +51,7 @@ function Search() {
 	return (
 		<>
 			{!data ? (
-				<main>
+				<main className={styles.mainLoader}>
 					<FallingLines
 						color='white'
 						width='100'
@@ -51,19 +64,27 @@ function Search() {
 					<BlurContainer style={styles.games}>
 						<h3>Список игр</h3>
 						{data.availableGames &&
-							data.availableGames.map((game, index) => (
+							data.availableGames.map((game) => (
 								<LobbyItem
-									title='Lobby'
+									title={`#${game.id} Комната ${game.hostLogin}`}
 									key={game.id}
 									userCount={game.userCount}
 									gameId={game.id}
-									onButtonClick={() => {
-										enterLobby(game.id);
-									}}
+									onButtonClick={() => onLobbyClick(game)}
+									hasPassword={game.hasPassword}
 								/>
 							))}
 					</BlurContainer>
 				</div>
+			)}
+			{isModalOpen && (
+				<PasswordModal
+					onClose={() => setIsModalOpen(false)}
+					onConfirm={(password) => {
+						enterLobby(selectedLobby.id, password);
+						setIsModalOpen(false);
+					}}
+				/>
 			)}
 		</>
 	);
