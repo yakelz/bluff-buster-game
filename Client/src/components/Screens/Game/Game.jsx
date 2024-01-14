@@ -19,6 +19,8 @@ import { ReactComponent as AutoplayIco } from '../../../assets/icons/autoplay.sv
 
 import GameButton from '../../UI/Buttons/GameButton';
 import { FallingLines } from 'react-loader-spinner';
+import Timer from '../../UI/Timer/Timer';
+
 const Game = () => {
 	useEffect(() => {
 		const wrapper = document.querySelector('.wrapper');
@@ -57,10 +59,12 @@ const Game = () => {
 		return () => clearInterval(interval);
 	}, []);
 
+	// Текущий ход у пользователя?
 	const canPlay =
 		data?.gameInfo?.playerID === data?.gameInfo?.currentPlayerID &&
 		data?.gameInfo?.checkerID === null;
 
+	// Сортировка карт
 	const cardOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 	function sortCards(handCards) {
@@ -87,10 +91,11 @@ const Game = () => {
 				return '';
 		}
 	};
-
+	// Чтобы игрок пользователя находился снизу
 	const index = data?.players?.findIndex((player) => player.player_id === data?.gameInfo?.playerID);
 	data?.players?.unshift(data?.players?.splice(index, 1)[0]);
 
+	// Найти игрока текущего хода
 	const currentPlayer = data?.players?.find(
 		(player) => player.player_id === data.gameInfo.currentPlayerID
 	);
@@ -108,6 +113,7 @@ const Game = () => {
 				</main>
 			) : (
 				<main>
+					{/* Кнопки в интерфейсе */}
 					<div className={styles.buttons}>
 						<div className={styles.buttonGroup}>
 							<GameButtonIco Ico={BackIco} onClick={() => {}} />
@@ -119,6 +125,7 @@ const Game = () => {
 						</div>
 					</div>
 
+					{/* Карточки игроков */}
 					<div className={styles.playersContainer}>
 						<ul className={styles.playerList}>
 							{data.players.map((player) => (
@@ -134,22 +141,33 @@ const Game = () => {
 						</ul>
 					</div>
 
+					{/* Карты игроков */}
 					<PlayersCards playerID={data.gameInfo.playerID} playersData={data.players} />
 
+					{/* Игровая информация (по середине экрана) */}
 					<div className={styles.game__info}>
-						<div className={styles.turn__cards}>
-							{Array.from({ length: data.gameInfo.cardsPlayedCount }, (_, index) => (
-								<img key={index} src={backCard} alt='Обложка карты' />
-							))}
-						</div>
-						<span className={styles.counter}>{data.gameInfo.cardsOnTableCount}</span>
-						<div className={styles.info__title}>
-							<span>
-								{currentPlayer ? currentPlayer.login : 'Неизвестный игрок'} положил{' '}
-								{getCardsPlayedCountText(data.gameInfo.cardsPlayedCount)}{' '}
-								<strong>{data.gameInfo.currentRank}</strong>
-							</span>
-						</div>
+						{/* Таймер */}
+						<Timer duration={20} playerName={currentPlayer.login} />
+						{data.gameInfo.cardsOnTableCount === 0 && (
+							<>
+								{/* Кол-во сыгранных карт за текущий ход */}
+								<div className={styles.turn__cards}>
+									{Array.from({ length: data.gameInfo.cardsPlayedCount }, (_, index) => (
+										<img key={index} src={backCard} alt='Обложка карты' />
+									))}
+								</div>
+								{/* Кол-во сыгранных карт */}
+								<span className={styles.counter}>{data.gameInfo.cardsOnTableCount}</span>
+								{/* Информация о ходе */}
+								<div className={styles.info__title}>
+									<span>
+										{currentPlayer ? currentPlayer.login : 'Неизвестный игрок'} положил{' '}
+										{getCardsPlayedCountText(data.gameInfo.cardsPlayedCount)}{' '}
+										<strong>{data.gameInfo.currentRank}</strong>
+									</span>
+								</div>
+							</>
+						)}
 
 						{isChecker && (
 							<>
@@ -164,6 +182,7 @@ const Game = () => {
 						)}
 					</div>
 
+					{/* Карты пользователя*/}
 					<div className={styles.cards}>
 						{sortedHandCards.map((card) => (
 							<Card

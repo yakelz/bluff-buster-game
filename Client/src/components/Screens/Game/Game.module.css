@@ -1,10 +1,11 @@
-.currentTurn {
-	color: green;
-	font-weight: bold;
-}
 .cardSelected {
 	border: 2px solid #4caf50;
 	transform: translateY(-20px);
+}
+
+.currentTurn {
+	border: 5px solid #99b4ff;
+	border-radius: 15px;
 }
 
 .buttons {

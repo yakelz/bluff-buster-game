@@ -1,0 +1,32 @@
+.timerContainer {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background-color: white;
+	padding: 10px;
+	border-radius: 15px;
+	font-weight: 800;
+	box-shadow: 0px 2px 15px 0px rgba(0, 0, 0, 0.5);
+}
+
+.countdown {
+	display: flex;
+	flex-direction: column;
+}
+
+.hourglassIcon {
+	width: 40px;
+	height: 40px;
+	animation: rotateHourglass 4s infinite;
+	fill: black;
+}
+
+@keyframes rotateHourglass {
+	0%,
+	100% {
+		transform: rotate(0deg);
+	}
+	50% {
+		transform: rotate(180deg);
+	}
+}

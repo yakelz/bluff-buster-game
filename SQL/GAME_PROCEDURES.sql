@@ -506,6 +506,8 @@ BEGIN
     -- Удаление проверки из таблицы Checks
     DELETE FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID;
 
+    -- Создаю подтверждение в таблице PlayerConfirm, для всех игроков
+
     CALL passTurnToNextPlayer(turnPlayerID, lobbyID);
     SELECT bluffDetected;
     COMMIT;
@@ -561,6 +563,12 @@ BEGIN
     -- Получение player_id, связанного с userId
     SELECT id INTO playerID FROM Players WHERE user_id = userId AND lobby_id = lobbyID;
 
+    -- Есть ли в PlayerConfirm player_id = playerID?
+    -- Если да, то удаляет в PlayerConfirm playerID
+
+    -- Если он удалил и он последний из игроков которые находятся в том лоббм
+    -- Значит все увидили, кроме него
+
     -- Кол-во карт на столе
     SELECT COUNT(*) INTO cardsOnTableCount FROM TableCards WHERE lobby_id = lobbyID;
 
@@ -576,6 +584,9 @@ BEGIN
     FROM Checks
     WHERE turn_player_id = currentPlayerID
     LIMIT 1;
+
+    -- Смотрю Checks, смотрю есть ли там какой то игрок из этого лобби
+        -- Смотрим в PlayerConfirm
 
     -- Проверка результата проверки, если она была
     IF checkerID IS NOT NULL THEN

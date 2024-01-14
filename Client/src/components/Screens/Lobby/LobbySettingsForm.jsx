@@ -49,8 +49,8 @@ const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
 				<div className={styles.private}>
 					<label htmlFor='privateRoom'>Приватная комната</label>
 					<Checkbox
-						id='privateRoom'
-						{...register('isPrivate')}
+						control={control}
+						name='password'
 						checked={isPrivate}
 						onChange={() => setIsPrivate(!isPrivate)}
 					/>
