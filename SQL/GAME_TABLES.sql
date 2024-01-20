@@ -10,6 +10,7 @@ CREATE TABLE Cards
 CREATE TABLE TableCards
 (
     card_id  INT PRIMARY KEY NOT NULL COMMENT 'id карты',
+
     lobby_id INT             NOT NULL COMMENT 'id лобби',
     FOREIGN KEY (card_id) REFERENCES Cards (id) ON DELETE RESTRICT,
     FOREIGN KEY (lobby_id) REFERENCES GameLobbies (id) ON DELETE CASCADE

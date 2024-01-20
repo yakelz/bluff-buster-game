@@ -1,3 +1,4 @@
+DROP PROCEDURE IF EXISTS initGame;
 -- Начало игры
 CREATE PROCEDURE initGame(token INT UNSIGNED, lobbyId INT)
     COMMENT 'Инициализация игры. Параметры: userToken, lobbyID'
@@ -6,13 +7,6 @@ BEGIN
     DECLARE currentHostId INT;
     DECLARE userId INT;
     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
-
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-        BEGIN
-            -- Откат в случае ошибки
-            ROLLBACK;
-            SELECT 'Произошла ошибка initGame()' AS error;
-        END;
 
     START TRANSACTION;
 
@@ -159,17 +153,19 @@ BEGIN
     ORDER BY RAND()
     LIMIT 1;
 
+    UPDATE GameLobbies SET state = 'Turn' WHERE id = lobbyId;
+
     DROP TEMPORARY TABLE PlayerIDs;
     COMMIT;
 END initGame;
 
 -- Сделать ход, параметры могут быть NULL
+DROP PROCEDURE IF EXISTS makeMove;
 CREATE PROCEDURE makeMove(token INT UNSIGNED, playerID INT, card1 INT, card2 INT, card3 INT, card4 INT)
     COMMENT 'Сделать ход. Параметры: playerID, card_id1, card_id2, card_id3, card_id4'
 makeMove:
 BEGIN
     DECLARE lobbyID INT;
-    DECLARE nextPlayerId INT;
 
     -- Проверка на валидность токена
     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
@@ -178,63 +174,70 @@ BEGIN
         LEAVE makeMove;
     END IF;
 
+    START TRANSACTION;
+
     SELECT lobby_id INTO lobbyID FROM Players WHERE id = playerID;
 
     -- Проверка, является ли текущий игрок ходящим игроком
     IF NOT EXISTS (SELECT 1 FROM CurrentTurn WHERE turn_player_id = playerID) THEN
         SELECT 'Не ваш ход' AS error;
+        ROLLBACK;
         LEAVE makeMove;
     END IF;
 
     -- Проверка, не сходил ли игрок уже
     IF EXISTS (SELECT 1 FROM TurnCards WHERE turn_player_id = playerID) THEN
         SELECT 'Вы уже сходили' AS error;
+        ROLLBACK;
         LEAVE makeMove;
     END IF;
 
-    -- Удаление карт игрока, которые он использовал в этом ходу
-    DELETE FROM PlayerCards WHERE player_id = playerID AND card_id IN (card1, card2, card3, card4);
-
     -- Добавление карт в Turn Cards
     IF card1 IS NOT NULL THEN
+        IF NOT EXISTS(SELECT 1 FROM PlayerCards WHERE player_id = playerID AND card_id = card1) THEN
+            ROLLBACK;
+            LEAVE makeMove;
+        END IF;
         INSERT INTO TurnCards (card_id, turn_player_id)
         VALUES (card1, playerID);
     END IF;
     IF card2 IS NOT NULL THEN
+        IF NOT EXISTS(SELECT 1 FROM PlayerCards WHERE player_id = playerID AND card_id = card2) THEN
+            ROLLBACK;
+            LEAVE makeMove;
+        END IF;
         INSERT INTO TurnCards (card_id, turn_player_id)
         VALUES (card2, playerID);
     END IF;
     IF card3 IS NOT NULL THEN
+        IF NOT EXISTS(SELECT 1 FROM PlayerCards WHERE player_id = playerID AND card_id = card3) THEN
+            ROLLBACK;
+            LEAVE makeMove;
+        END IF;
         INSERT INTO TurnCards (card_id, turn_player_id)
         VALUES (card3, playerID);
     END IF;
     IF card4 IS NOT NULL THEN
+        IF NOT EXISTS(SELECT 1 FROM PlayerCards WHERE player_id = playerID AND card_id = card4) THEN
+            ROLLBACK;
+            LEAVE makeMove;
+        END IF;
         INSERT INTO TurnCards (card_id, turn_player_id)
         VALUES (card4, playerID);
     END IF;
 
-    -- Предложение игрокам сделать проверку
 
-    -- Находим след игрока, которому предлагаем проверить
-    SET nextPlayerId = findNextPlayerWithChecks(playerID, lobbyID);
-
-    -- Если найден игрок для проверки
-    IF nextPlayerId IS NOT NULL THEN
-        -- Создаем предложение для проверки
-        INSERT INTO Checks (player_id, turn_player_id, start_time)
-        VALUES (nextPlayerId, playerID, NOW());
-    ELSE
-        -- Если никто не может проверить, проверяем, есть ли у игрока еще карты в руке
-        -- Если нет, тогда
-        -- Игрок выигрывает
-        -- Если есть, тогда
-        -- Передаем ход следующему игроку
-        CALL passTurnToNextPlayer(playerID, lobbyID);
-    END IF;
+    -- Удаление карт игрока, которые он использовал в этом ходу
+    DELETE FROM PlayerCards WHERE player_id = playerID AND card_id IN (card1, card2, card3, card4);
+    -- Создание проверки, чтобы все игроки увидели карты которыми сыграл игрок
+    INSERT INTO PlayerConfirmations(player_id) SELECT id FROM Players WHERE lobby_id = lobbyID;
+    COMMIT;
 END makeMove;
 
+DROP FUNCTION IF EXISTS findNextPlayer;
 -- Нахождение следующего игрока
 CREATE FUNCTION findNextPlayer(currentPlayerId INT, lobbyId INT) RETURNS INT
+    SQL SECURITY INVOKER
 BEGIN
     DECLARE nextPlayerId INT DEFAULT NULL;
 
@@ -260,8 +263,10 @@ BEGIN
     RETURN nextPlayerId;
 END;
 
+DROP FUNCTION IF EXISTS findNextPlayerWithChecks;
 -- Нахождение следующего игрока, который может проверить
 CREATE FUNCTION findNextPlayerWithChecks(currentPlayerId INT, lobbyId INT) RETURNS INT
+    SQL SECURITY INVOKER
 BEGIN
     DECLARE nextPlayerId INT DEFAULT NULL;
 
@@ -282,31 +287,32 @@ BEGIN
         FROM Players
         WHERE lobby_id = lobbyId
           AND checks_count > 0
-          AND id <> currentPlayerId
+          AND id != currentPlayerId
         ORDER BY id
         LIMIT 1;
     END IF;
-
     RETURN nextPlayerId;
 END;
 
+DROP PROCEDURE IF EXISTS passTurnToNextPlayer;
 -- Передать ход другому игроку
-CREATE PROCEDURE passTurnToNextPlayer(currentPlayerId INT, lobbyId INT)
+CREATE PROCEDURE passTurnToNextPlayer(currentPlayerId INT, lobbyId INT, currentRank VARCHAR(2))
+    SQL SECURITY INVOKER
 BEGIN
     DECLARE nextPlayerId INT;
-
     -- Находим след игрока
     SET nextPlayerId = findNextPlayer(currentPlayerId, lobbyId);
 
-    -- Обновляем в CurrentTurn
-    UPDATE CurrentTurn SET turn_player_id = nextPlayerId WHERE turn_player_id = currentPlayerId;
+    DELETE FROM CurrentTurn WHERE turn_player_id = currentPlayerId;
+    INSERT CurrentTurn(turn_player_id, current_rank, start_time) VALUES (nextPlayerId, currentRank, NOW());
 END;
 
+DROP FUNCTION IF EXISTS getNextRank;
 -- Изменить текущий номинал
-CREATE PROCEDURE changeCurrentRank(lobbyID INT)
+CREATE FUNCTION getNextRank(lobbyID INT) RETURNS VARCHAR(2)
+    SQL SECURITY INVOKER
 BEGIN
     DECLARE currentRank ENUM ('A','2','3','4','5','6','7','8','9','10','J','Q','K');
-    DECLARE nextRank ENUM ('A','2','3','4','5','6','7','8','9','10','J','Q','K');
 
     -- Получение текущего ранга
     SELECT current_rank
@@ -317,38 +323,31 @@ BEGIN
     LIMIT 1;
 
     -- Определение следующего ранга
-    SET nextRank = CASE currentRank
-                       WHEN 'A' THEN '2'
-                       WHEN '2' THEN '3'
-                       WHEN '3' THEN '4'
-                       WHEN '4' THEN '5'
-                       WHEN '5' THEN '6'
-                       WHEN '6' THEN '7'
-                       WHEN '7' THEN '8'
-                       WHEN '8' THEN '9'
-                       WHEN '9' THEN '10'
-                       WHEN '10' THEN 'J'
-                       WHEN 'J' THEN 'Q'
-                       WHEN 'Q' THEN 'K'
-                       WHEN 'K' THEN 'A'
+    RETURN CASE currentRank
+               WHEN 'A' THEN '2'
+               WHEN '2' THEN '3'
+               WHEN '3' THEN '4'
+               WHEN '4' THEN '5'
+               WHEN '5' THEN '6'
+               WHEN '6' THEN '7'
+               WHEN '7' THEN '8'
+               WHEN '8' THEN '9'
+               WHEN '9' THEN '10'
+               WHEN '10' THEN 'J'
+               WHEN 'J' THEN 'Q'
+               WHEN 'Q' THEN 'K'
+               WHEN 'K' THEN 'A'
         END;
-
-    -- Обновление current_rank в таблице CurrentTurn
-    UPDATE CurrentTurn
-        JOIN Players ON CurrentTurn.turn_player_id = Players.id
-    SET CurrentTurn.current_rank = nextRank
-    WHERE Players.lobby_id = lobbyID;
 END;
 
 
-
+DROP PROCEDURE IF EXISTS declineCheckBluff;
 -- Отклонить проверку
 CREATE PROCEDURE declineCheckBluff(token INT UNSIGNED, checkerID INT, turnPlayerID INT)
     COMMENT 'Отказаться от проверки игрока. Параметры: userToken, checkerID, turnPlayerID'
 declineCheckBluff:
 BEGIN
     DECLARE lobbyID INT;
-    DECLARE nextPlayerId INT;
     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
 
     START TRANSACTION;
@@ -371,48 +370,21 @@ BEGIN
     -- Получение ID лобби
     SELECT lobby_id INTO lobbyID FROM Players WHERE id = checkerID;
 
-    -- Удаление текущего запроса на проверку
-    DELETE FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID;
-
-    -- Находим следующего игрока с доступными проверками
-    SET nextPlayerId = findNextPlayerWithChecks(checkerID, lobbyID);
-
-    -- Если найден игрок для проверки
-    IF nextPlayerId IS NULL OR nextPlayerId = turnPlayerID THEN
-        -- Если никто не может проверить
-        -- Складываем карты из TurnCards на TableCards
-        INSERT INTO TableCards (card_id, lobby_id)
-        SELECT card_id, lobbyID
-        FROM TurnCards
-        WHERE turn_player_id = turnPlayerID;
-
-        -- Удаляем карты текущего игрока из TurnCards
-        DELETE FROM TurnCards WHERE turn_player_id = turnPlayerID;
-
-        -- передаем ход следующему игроку
-        CALL changeCurrentRank(lobbyID);
-        CALL passTurnToNextPlayer(turnPlayerID, lobbyID);
-    ELSE
-        -- Создаем предложение для проверки
-        INSERT INTO Checks (player_id, turn_player_id, start_time)
-        VALUES (nextPlayerId, turnPlayerID, NOW());
-    END IF;
+    -- Создание проверки, чтобы все игроки увидели что игрок думает
+    INSERT INTO PlayerConfirmations(player_id) SELECT id FROM Players WHERE lobby_id = lobbyID;
     COMMIT;
+
 END declineCheckBluff;
 
-
+DROP PROCEDURE IF EXISTS checkBluff;
 -- Проверить сходивщего игрока
 CREATE PROCEDURE checkBluff(token INT UNSIGNED, checkerID INT, turnPlayerID INT)
     COMMENT 'Проверка на блеф. Параметры: userToken, checkerID, turnPlayerID'
 checkBluff:
 BEGIN
     DECLARE currentRank ENUM ('A','2','3','4','5','6','7','8','9','10','J','Q','K');
-    DECLARE bluffDetected BOOLEAN;
-    DECLARE cardCount INT;
-    DECLARE checkStartTime DATETIME;
     DECLARE lobbyID INT;
     DECLARE checkTime INT;
-    DECLARE timeElapsed INT;
     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
 
     START TRANSACTION;
@@ -438,81 +410,18 @@ BEGIN
              JOIN Players ON GameLobbies.id = Players.lobby_id
     WHERE Players.id = checkerID;
 
-    -- Берем start_time проверки
-    SELECT start_time
-    INTO checkStartTime
-    FROM Checks
-    WHERE player_id = checkerID
-      AND turn_player_id = turnPlayerID;
-
-    -- Проверка, истекло ли время на проверку
-    SELECT TIMESTAMPDIFF(SECOND, checkStartTime, NOW()) INTO timeElapsed;
-
-    IF (timeElapsed > checkTime) THEN
-        -- Если время истекло, автоматический отказ от проверки
-        CALL declineCheckBluff(token, checkerID, turnPlayerID);
-        LEAVE checkBluff;
-    END IF;
-
-    -- Если есть время, проверяем игрока:
-
     -- Получение текущего ранга карты
     SELECT current_rank INTO currentRank FROM CurrentTurn WHERE turn_player_id = turnPlayerID;
 
-    -- Проверка количества карт в TurnCards, не соответствующих текущему рангу
-    SELECT COUNT(*)
-    INTO cardCount
-    FROM TurnCards
-             JOIN Cards ON TurnCards.card_id = Cards.id
-    WHERE turn_player_id = turnPlayerID
-      AND Cards.rank != currentRank;
+    UPDATE GameLobbies SET state = 'Checking' WHERE id = lobbyID;
 
-    -- Определение, врал ли игрок
-    SET bluffDetected = cardCount > 0;
-
-    IF bluffDetected THEN
-        -- Если игрок врал
-        -- Перемещение карт из TurnCards и TableCards в PlayerCards (turnPlayerID)
-        INSERT INTO PlayerCards (player_id, card_id)
-        SELECT turnPlayerID, card_id
-        FROM TurnCards
-        WHERE turn_player_id = turnPlayerID;
-        INSERT INTO PlayerCards (player_id, card_id)
-        SELECT turnPlayerID, card_id
-        FROM TableCards
-        WHERE lobby_id = (SELECT lobby_id FROM Players WHERE id = turnPlayerID);
-    ELSE
-        -- Если игрок не врал
-        -- Перемещение карт из TurnCards и TableCards в PlayerCards (checkerID)
-        INSERT INTO PlayerCards (player_id, card_id)
-        SELECT checkerID, card_id
-        FROM TurnCards
-        WHERE turn_player_id = turnPlayerID;
-        INSERT INTO PlayerCards (player_id, card_id)
-        SELECT checkerID, card_id
-        FROM TableCards
-        WHERE lobby_id = (SELECT lobby_id FROM Players WHERE id = checkerID);
-
-        -- Уменьшение checks_Count у checkerID
-        UPDATE Players SET checks_count = checks_count - 1 WHERE id = checkerID;
-
-        -- Изменение текущего ранга
-        CALL changeCurrentRank(lobbyID);
-    END IF;
-
-    -- Удаление всех карт из TurnCards и TableCards для текущего лобби
-    DELETE FROM TurnCards WHERE turn_player_id = turnPlayerID;
-    DELETE FROM TableCards WHERE lobby_id = (SELECT lobby_id FROM Players WHERE id = turnPlayerID);
-    -- Удаление проверки из таблицы Checks
-    DELETE FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID;
-
-    -- Создаю подтверждение в таблице PlayerConfirm, для всех игроков
-
-    CALL passTurnToNextPlayer(turnPlayerID, lobbyID);
-    SELECT bluffDetected;
+    -- Создание проверки, чтобы все игроки увидели результат проверки
+    INSERT INTO PlayerConfirmations(player_id) SELECT id FROM Players WHERE lobby_id = lobbyID;
     COMMIT;
+
 END checkBluff;
 
+DROP PROCEDURE IF EXISTS updateGameInfo;
 -- Вывод текущего состояния игры
 CREATE PROCEDURE updateGameInfo(token INT UNSIGNED, lobbyID INT)
     COMMENT 'Обновление информации о игре. Параметры: lobbyID'
@@ -527,6 +436,7 @@ BEGIN
     DECLARE checkResult VARCHAR(20);
     DECLARE userId INT;
     DECLARE playerID INT;
+    DECLARE v_state VARCHAR(20);
 
     -- Проверка на валидность токена
     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
@@ -550,6 +460,14 @@ BEGIN
         LEAVE updateGameInfo;
     END IF;
 
+
+    -- Получение userId из login
+    SELECT id INTO userId FROM Users WHERE login = userLogin;
+    -- Получение player_id, связанного с userId
+    SELECT id INTO playerID FROM Players WHERE user_id = userId AND lobby_id = lobbyID;
+
+    -- Есть ли ожидание потверждения от игрока?
+
     -- Получение id текущего игрока и текущего номинала
     SELECT turn_player_id, current_rank
     INTO currentPlayerID, currentRank
@@ -557,17 +475,6 @@ BEGIN
              JOIN Players ON CurrentTurn.turn_player_id = Players.id
     WHERE Players.lobby_id = lobbyID;
 
-    -- Получение userId из login
-    SELECT id INTO userId FROM Users WHERE login = userLogin;
-
-    -- Получение player_id, связанного с userId
-    SELECT id INTO playerID FROM Players WHERE user_id = userId AND lobby_id = lobbyID;
-
-    -- Есть ли в PlayerConfirm player_id = playerID?
-    -- Если да, то удаляет в PlayerConfirm playerID
-
-    -- Если он удалил и он последний из игроков которые находятся в том лоббм
-    -- Значит все увидили, кроме него
 
     -- Кол-во карт на столе
     SELECT COUNT(*) INTO cardsOnTableCount FROM TableCards WHERE lobby_id = lobbyID;
@@ -586,7 +493,7 @@ BEGIN
     LIMIT 1;
 
     -- Смотрю Checks, смотрю есть ли там какой то игрок из этого лобби
-        -- Смотрим в PlayerConfirm
+    -- Смотрим в PlayerConfirm
 
     -- Проверка результата проверки, если она была
     IF checkerID IS NOT NULL THEN
@@ -605,8 +512,162 @@ BEGIN
            checkerID,
            checkResult;
 
+    IF EXISTS(SELECT 1 FROM PlayerConfirmations WHERE player_id = playerID) THEN
+        -- Если есть то удаляем
+        DELETE FROM PlayerConfirmations WHERE player_id = playerID;
+        -- Если она последняя то делаем ключевое действие
+        IF NOT EXISTS(SELECT 1
+                      FROM PlayerConfirmations
+                               JOIN Players on Players.id = player_id) THEN
+
+
+
+           SELECT 'Inside';
+            -- Просмотр карта хода
+            SELECT state INTO v_state FROM GameLobbies WHERE id = lobbyID;
+
+            SELECT v_state;
+
+            IF (v_state = 'Checking') THEN
+                CALL confirmChecking(currentPlayerID, checkerID, currentRank, lobbyID);
+            END IF;
+            IF (v_state = 'Finish') THEN
+                CALL confirmFinish(currentPlayerID, lobbyID);
+            END IF;
+            IF (v_state = 'Turn') THEN
+                CALL confirmTurn(currentPlayerID, lobbyID);
+            END IF;
+            IF (v_state = 'Check Accepting') THEN
+                CALL confirmDeclineChecking(currentPlayerID, checkerID, lobbyID);
+            end if;
+        END IF;
+    END IF;
 END updateGameInfo;
 
+DROP PROCEDURE IF EXISTS confirmFinish;
+CREATE PROCEDURE confirmFinish(turnPlayerID INT, lobbyID INT)
+    SQL SECURITY INVOKER
+BEGIN
+    DELETE FROM GameLobbies WHERE id = lobbyID;
+    UPDATE Users JOIN Players on Users.id = Players.user_id
+    SET win_count = win_count + 1
+    WHERE Players.id = turnPlayerID;
+END;
+
+
+DROP PROCEDURE IF EXISTS confirmTurn;
+CREATE PROCEDURE confirmTurn(turnPlayerID INT, lobbyID INT)
+    SQL SECURITY INVOKER
+this:
+BEGIN
+    DECLARE nextPlayerID INT DEFAULT findNextPlayerWithChecks(turnPlayerID, lobbyID);
+    SELECT nextPlayerID;
+    IF (nextPlayerID IS NULL) THEN
+         SELECT 'nextPlayerID is null';
+        -- Карт в руке нет значит он победил
+        IF NOT EXISTS(SELECT 1 FROM PlayerCards WHERE player_id = turnPlayerID) THEN
+            SELECT 'finish';
+            UPDATE GameLobbies SET state = 'Finish' WHERE id = lobbyID;
+            INSERT INTO PlayerConfirmations(player_id) SELECT id FROM Players WHERE lobby_id = lobbyID;
+            LEAVE this;
+        END IF;
+
+        SELECT 'moveNext';
+        INSERT INTO TableCards (card_id, lobby_id)
+        SELECT card_id, lobbyID
+        FROM TurnCards
+        WHERE turn_player_id = turnPlayerID;
+        DELETE FROM TurnCards WHERE turn_player_id = turnPlayerID;
+        CALL passTurnToNextPlayer(turnPlayerID, lobbyID, getNextRank(lobbyID));
+        LEAVE this;
+    END IF;
+
+       SELECT 'createCheck';
+    INSERT INTO Checks (player_id, turn_player_id, start_time) VALUES (nextPlayerId, turnPlayerID, NOW());
+    UPDATE GameLobbies SET state = 'Check Accepting' WHERE id = lobbyID;
+END;
+
+DROP PROCEDURE IF EXISTS confirmDeclineChecking;
+CREATE PROCEDURE confirmDeclineChecking(turnPlayerID INT, checkerPlayerID INT, lobbyID INT)
+    SQL SECURITY INVOKER
+this:
+BEGIN
+    DECLARE nextPlayerID INT;
+    DELETE FROM Checks WHERE player_id = checkerPlayerID;
+    -- Находим следующего игрока с доступными проверками
+    SET nextPlayerId = findNextPlayerWithChecks(checkerPlayerID, lobbyID);
+
+    IF (nextPlayerID IS NULL) THEN
+        -- Карт в руке нет значит он победил
+        IF NOT EXISTS(SELECT 1 FROM PlayerCards WHERE player_id = turnPlayerID) THEN
+            UPDATE GameLobbies SET state = 'Finish' WHERE id = lobbyID;
+            INSERT INTO PlayerConfirmations(player_id) SELECT id FROM Players WHERE lobby_id = lobbyID;
+            LEAVE this;
+        END IF;
+
+        INSERT INTO TableCards (card_id, lobby_id)
+        SELECT card_id, lobbyID
+        FROM TurnCards
+        WHERE turn_player_id = turnPlayerID;
+        DELETE FROM TurnCards WHERE turn_player_id = turnPlayerID;
+        CALL passTurnToNextPlayer(turnPlayerID, lobbyID, getNextRank(lobbyID));
+        LEAVE this;
+    END IF;
+
+    INSERT INTO Checks (player_id, turn_player_id, start_time)
+    VALUES (nextPlayerId, turnPlayerID, NOW());
+    UPDATE GameLobbies SET state = 'Check Accepting' WHERE id = lobbyID;
+END;
+
+DROP PROCEDURE IF EXISTS confirmChecking;
+CREATE PROCEDURE confirmChecking(turnPlayerID INT, checkerPlayerID INT, currentRank INT, lobbyID INT)
+    SQL SECURITY INVOKER
+BEGIN
+    DECLARE bluffDetected BOOLEAN;
+    DECLARE losePlayer INT;
+
+
+    -- Определение, врал ли игрок
+    SET bluffDetected = EXISTS(SELECT 1
+                               FROM TurnCards
+                                        JOIN Cards ON TurnCards.card_id = Cards.id
+                               WHERE turn_player_id = turnPlayerID
+                                 AND Cards.rank != currentRank);
+
+    IF (bluffDetected) THEN
+        SET losePlayer = turnPlayerID;
+    ELSE
+        SET losePlayer = checkerPlayerID;
+    END IF;
+
+    INSERT INTO PlayerCards (player_id, card_id)
+    SELECT losePlayer, card_id
+    FROM TurnCards
+    WHERE turn_player_id = turnPlayerID;
+
+    INSERT INTO PlayerCards (player_id, card_id)
+    SELECT losePlayer, card_id
+    FROM TableCards
+    WHERE lobby_id = lobbyID;
+
+    DELETE FROM CurrentTurn WHERE turn_player_id = turnPlayerID;
+
+    IF bluffDetected THEN
+        INSERT INTO CurrentTurn(start_time, current_rank, turn_player_id) VALUES (NOW(), currentRank, checkerPlayerID);
+    ELSE
+        UPDATE Players SET checks_count = checks_count - 1 WHERE id = checkerPlayerID;
+        CALL passTurnToNextPlayer(turnPlayerID, lobbyID, getNextRank(lobbyID));
+    END IF;
+
+
+    -- Удаление всех карт из TurnCards и TableCards для текущего лобби
+    DELETE FROM TurnCards WHERE turn_player_id = turnPlayerID;
+    DELETE FROM TableCards WHERE lobby_id = lobbyID;
+    -- Удаление проверки из таблицы Checks
+    DELETE FROM Checks WHERE player_id = checkerPlayerID;
+END;
+
+DROP PROCEDURE IF EXISTS getPlayerCards;
 -- Вывести карты игрока
 CREATE PROCEDURE getPlayerCards(token INT UNSIGNED, lobbyId INT)
     COMMENT 'Получить карты игрока. Параметры: userToken, lobbyId'
@@ -630,6 +691,7 @@ BEGIN
     WHERE player_id = (SELECT id FROM Players WHERE user_id = userId AND lobby_id = lobbyId);
 END;
 
+DROP PROCEDURE IF EXISTS getPlayersInLobby;
 -- Получить текущих игроков и кол-во их карт
 CREATE PROCEDURE getPlayersInLobby(token INT UNSIGNED, lobbyID INT)
     COMMENT 'Получить игроков в лобби и кол-во карт в их руках. Параметр: lobbyID'

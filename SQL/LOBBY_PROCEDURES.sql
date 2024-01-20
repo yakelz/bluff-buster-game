@@ -109,6 +109,7 @@ BEGIN
     SELECT hasPassword, turn_time, check_time FROM GameLobbies WHERE id = lobbyId;
 END getLobbySettings;
 
+DROP PROCEDURE IF EXISTS createLobby;
 -- Создать игровое лобби
 CREATE PROCEDURE createLobby(tk INT UNSIGNED, pw VARCHAR(10), turnT INT UNSIGNED, checkT INT UNSIGNED)
     COMMENT "Создание игрового лобби. Параметры: userToken, password, turnTime, checkTime"
@@ -128,7 +129,7 @@ BEGIN
     SELECT id INTO userId FROM Users WHERE login = userLogin;
 
     -- Запрос
-    INSERT INTO GameLobbies (password, turn_time, check_time, host_id) VALUES (pw, turnT, checkT, userId);
+    INSERT INTO GameLobbies (password, turn_time, check_time, host_id, state) VALUES (pw, turnT, checkT, userId, 'Start');
     INSERT INTO UsersInLobby (user_id, lobby_id)
     VALUES ((SELECT id FROM Users WHERE login = userLogin), LAST_INSERT_ID());
     SELECT LAST_INSERT_ID() AS lobbyID;

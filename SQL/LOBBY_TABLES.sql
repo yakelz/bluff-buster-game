@@ -3,11 +3,18 @@ CREATE TABLE GameLobbies
 (
     id         INT AUTO_INCREMENT PRIMARY KEY COMMENT 'id игрового лобби',
     password   VARCHAR(10) COMMENT 'Пароль для лобби',
-    turn_time  INT UNSIGNED NOT NULL DEFAULT 30 COMMENT 'Время хода в секундах',
-    check_time INT UNSIGNED NOT NULL DEFAULT 15 COMMENT 'Время для проверки хода в секундах',
+    turn_time  INT UNSIGNED                                                                                            NOT NULL DEFAULT 30 COMMENT 'Время хода в секундах',
+    check_time INT UNSIGNED                                                                                            NOT NULL DEFAULT 15 COMMENT 'Время для проверки хода в секундах',
     host_id    INT COMMENT 'id хоста',
+    state      ENUM ('Start', 'Turn', 'Check Accepting', 'Checking') NOT NULL,
     FOREIGN KEY (host_id) REFERENCES Users (id) ON DELETE SET NULL
 ) COMMENT ='Таблица игровых лобби';
+
+CREATE TABLE PlayerConfirmations
+(
+    player_id INT PRIMARY KEY NOT NULL COMMENT 'id игрока',
+    FOREIGN KEY (player_id) REFERENCES Players (id) ON DELETE CASCADE
+) COMMENT ='Таблица потвердждение игрока';
 
 -- Таблица информации о игроках
 CREATE TABLE Players

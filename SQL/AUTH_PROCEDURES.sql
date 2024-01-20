@@ -65,6 +65,12 @@ BEGIN
     END IF;
 END;
 
+CREATE PROCEDURE showUserPl()
+    COMMENT "Вывод информации о пользователе. Параметры: token"
+BEGIN
+    SELECT login, win_count FROM Users;
+END;
+
 -- Процедура очистки старых токенов
 CREATE PROCEDURE clearTokens()
     COMMENT "Очистка старых токенов"
