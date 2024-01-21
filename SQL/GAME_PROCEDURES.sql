@@ -159,6 +159,16 @@ BEGIN
     COMMIT;
 END initGame;
 
+DROP FUNCTION IF EXISTS isConfirming;
+CREATE FUNCTION isConfirming(lobbyID INT) RETURNS BOOLEAN
+    SQL SECURITY INVOKER
+BEGIN
+    RETURN EXISTS(SELECT 1
+                  FROM PlayerConfirmations
+                           JOIN Players on player_id = id
+                  WHERE lobby_id = lobbyID);
+END;
+
 -- Сделать ход, параметры могут быть NULL
 DROP PROCEDURE IF EXISTS makeMove;
 CREATE PROCEDURE makeMove(token INT UNSIGNED, playerID INT, card1 INT, card2 INT, card3 INT, card4 INT)
@@ -188,7 +198,7 @@ BEGIN
     END IF;
 
     -- Проверка, не сходил ли игрок уже
-    IF EXISTS (SELECT 1 FROM TurnCards WHERE turn_player_id = playerID) THEN
+    IF (EXISTS (SELECT 1 FROM TurnCards WHERE turn_player_id = playerID) OR isConfirming(lobbyID)) THEN
         SELECT 'Вы уже сходили' AS error;
         ROLLBACK;
         LEAVE makeMove;
@@ -381,7 +391,7 @@ BEGIN
 
     -- Проверяем, есть ли проверка у этого игрока?
     -- из таблицы Checks
-    IF NOT EXISTS (SELECT 1 FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID) THEN
+    IF (NOT EXISTS (SELECT 1 FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID) OR isConfirming(lobbyID)) THEN
         SELECT 'У вас нет права на проверку' AS error;
         ROLLBACK;
         LEAVE declineCheckBluff;
@@ -418,7 +428,7 @@ BEGIN
 
     -- Проверяем, есть ли проверка у этого игрока?
     -- из таблицы Checks
-    IF NOT EXISTS (SELECT 1 FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID) THEN
+    IF (NOT EXISTS (SELECT 1 FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID) or isConfirming(lobbyID)) THEN
         SELECT 'У вас нет права на проверку' AS error;
         ROLLBACK;
         LEAVE checkBluff;
@@ -531,7 +541,8 @@ BEGIN
            cardsPlayedCount,
            nextPlayerID,
            checkerID,
-           checkResult;
+           checkResult,
+           isConfirming(lobbyID);
 
     IF EXISTS(SELECT 1 FROM PlayerConfirmations WHERE player_id = playerID) THEN
         -- Если есть то удаляем
