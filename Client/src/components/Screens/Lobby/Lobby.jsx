@@ -65,17 +65,20 @@ const Lobby = () => {
 		if (lobbyId) {
 			getLobbyInfo();
 			const interval = setInterval(() => {
+
 				getLobbyInfo();
 			}, 5000);
 
 			// Очистка интервала при размонтировании компонента
 			return () => clearInterval(interval);
+
 		}
 	}, [lobbyId]);
 
 	useEffect(() => {
 		if (data && data.usersInLobby && data.host && userID) {
 			const userIndex = data.usersInLobby.findIndex((user) => user.user_id === userID);
+
 			if (userIndex !== -1) {
 				setIsReady(data.usersInLobby[userIndex].is_ready === 1);
 			}
@@ -88,8 +91,10 @@ const Lobby = () => {
 			}
 
 			// Проверяем, готовы ли все игроки
-			const areAllPlayersReady = data.usersInLobby.every((user) => user.is_ready === 1);
+			const areAllPlayersReady = data.usersInLobby.every((user) => user.is_ready === 1 || user.user_id === userID);
 			const isLobbyFull = data.usersInLobby.length === 4;
+			console.log(`All Ready: ${areAllPlayersReady} isLobbyFull ${isLobbyFull}`);
+			console.log(data.usersInLobby);
 			setAllReady(areAllPlayersReady && isLobbyFull);
 		}
 	}, [data, userID, dispatch, isHost]);
