@@ -542,7 +542,7 @@ BEGIN
            nextPlayerID,
            checkerID,
            checkResult,
-           isConfirming(lobbyID);
+           isConfirming(lobbyID) AS isConfirming;
 
     IF EXISTS(SELECT 1 FROM PlayerConfirmations WHERE player_id = playerID) THEN
         -- Если есть то удаляем

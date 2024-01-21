@@ -6,7 +6,6 @@ export const lobbySlice = createSlice({
 		lobbySettings: null,
 		players: [],
 		lobbyId: null,
-		// Другие связанные данные лобби
 	},
 	reducers: {
 		setLobbySettings: (state, action) => {
@@ -18,11 +17,9 @@ export const lobbySlice = createSlice({
 		setLobbyId: (state, action) => {
 			state.lobbyId = action.payload;
 		},
-		// Другие редьюсеры, если необходимы
 	},
 });
 
-// Экспортируем редьюсеры для использования в компонентах
 export const { setLobbySettings, setPlayers, setLobbyId } = lobbySlice.actions;
 
 export default lobbySlice.reducer;

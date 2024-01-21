@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 const useCardSelection = (data, sendActionRequest, lobbyId) => {
 	const [selectedCards, setSelectedCards] = useState([]);
-	console.log(selectedCards);
 	const toggleCardSelection = (cardId, canPlay) => {
 		if (!canPlay) return;
 		setSelectedCards((prevSelected) => {
@@ -28,6 +27,7 @@ const useCardSelection = (data, sendActionRequest, lobbyId) => {
 			method: 'PUT',
 			payload: payload,
 		});
+		setSelectedCards([]);
 	};
 
 	return { selectedCards, toggleCardSelection, submitSelectedCards };

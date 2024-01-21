@@ -3,7 +3,7 @@ import PlayerRank from '../PlayerRank/PlayerRank';
 import styles from './PlayerItem.module.css';
 import { ReactComponent as BulletIco } from '../../../assets/icons/bullet.svg';
 
-function PlayerItem({ playerRank, nickname, check_count }) {
+function PlayerItem({ isCurrentPlayer, playerRank, nickname, check_count }) {
 	const bullets = Array.from({ length: check_count }, (_, i) => <BulletIco key={i} />);
 	return (
 		<div className={styles.player}>

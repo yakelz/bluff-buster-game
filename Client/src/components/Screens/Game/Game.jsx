@@ -62,7 +62,8 @@ const Game = () => {
 	// Текущий ход у пользователя?
 	const canPlay =
 		data?.gameInfo?.playerID === data?.gameInfo?.currentPlayerID &&
-		data?.gameInfo?.checkerID === null;
+		data?.gameInfo?.checkerID === null &&
+		data?.gameInfo?.isConfirming !== 1;
 
 	// Сортировка карт
 	const cardOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -93,7 +94,10 @@ const Game = () => {
 	};
 	// Чтобы игрок пользователя находился снизу
 	const index = data?.players?.findIndex((player) => player.player_id === data?.gameInfo?.playerID);
-	data?.players?.unshift(data?.players?.splice(index, 1)[0]);
+	const shiftCount = (index + data?.players?.length) % data?.players?.length;
+	for (let i = 0; i < shiftCount; i++) {
+		data?.players?.push(data?.players?.shift());
+	}
 
 	// Найти игрока текущего хода
 	const currentPlayer = data?.players?.find(

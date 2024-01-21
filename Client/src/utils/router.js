@@ -13,6 +13,7 @@ import CreateLobby from '../components/Screens/Lobby/CreateLobby';
 import ChangeLobbySettings from '../components/Screens/Lobby/ChangeLobbySettings';
 import Game from '../components/Screens/Game/Game';
 import Layout from '../components/Layout/Layout';
+import { FallingLines } from 'react-loader-spinner';
 
 import { useSelector, useDispatch } from 'react-redux';
 import { checkToken } from '../redux/auth/authThunks';
@@ -29,7 +30,16 @@ const AppRouter = () => {
 	}, [dispatch]);
 
 	if (isLoading) {
-		return <div>Загрузка...</div>;
+		return (
+			<main>
+				<FallingLines
+					color='white'
+					width='100'
+					visible={true}
+					ariaLabel='falling-circles-loading'
+				/>
+			</main>
+		);
 	}
 
 	return (
