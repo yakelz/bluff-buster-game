@@ -18,6 +18,7 @@ import { ReactComponent as QuestionIco } from '../../../assets/icons/question.sv
 import { ReactComponent as AutoplayIco } from '../../../assets/icons/autoplay.svg';
 
 import GameButton from '../../UI/Buttons/GameButton';
+import ClickWrapper from '../../UI/Buttons/ClickWrapper';
 import { FallingLines } from 'react-loader-spinner';
 import Timer from '../../UI/Timer/Timer';
 
@@ -120,12 +121,12 @@ const Game = () => {
 					{/* Кнопки в интерфейсе */}
 					<div className={styles.buttons}>
 						<div className={styles.buttonGroup}>
-							<GameButtonIco Ico={BackIco} onClick={() => {}} />
-							<GameButtonIco Ico={MusicIco} onClick={() => {}} />
+							<GameButtonIco Ico={BackIco} onClick={() => { }} />
+							<GameButtonIco Ico={MusicIco} onClick={() => { }} />
 						</div>
 						<div className={styles.buttonGroup}>
-							<GameButtonIco Ico={QuestionIco} onClick={() => {}} />
-							<GameButtonIco Ico={AutoplayIco} onClick={() => {}} />
+							<GameButtonIco Ico={QuestionIco} onClick={() => { }} />
+							<GameButtonIco Ico={AutoplayIco} onClick={() => { }} />
 						</div>
 					</div>
 
@@ -135,9 +136,8 @@ const Game = () => {
 							{data.players.map((player) => (
 								<li
 									key={player.player_id}
-									className={`${styles.player} ${
-										player.player_id === data.gameInfo.currentPlayerID ? styles.currentTurn : ''
-									}`}
+									className={`${styles.player} ${player.player_id === data.gameInfo.currentPlayerID ? styles.currentTurn : ''
+										}`}
 								>
 									<PlayerItem playerRank={5} nickname={player.login} check_count='3' />
 								</li>
@@ -174,15 +174,19 @@ const Game = () => {
 						)}
 
 						{isChecker && (
-							<>
+							<ClickWrapper initState={false}>
 								<GameButton onClick={handleCheck}>Проверить</GameButton>
 								<GameButton onClick={handleDeclineCheck}>Отклонить проверку</GameButton>
-							</>
+							</ClickWrapper>
 						)}
 						{canPlay && (
-							<GameButton onClick={submitSelectedCards}>
-								Сыграть {getCardsPlayedCountText(selectedCards.length)} {data.gameInfo.currentRank}
-							</GameButton>
+
+							<ClickWrapper initState={false}>
+								<GameButton onClick={submitSelectedCards}>
+									Сыграть {getCardsPlayedCountText(selectedCards.length)} {data.gameInfo.currentRank}
+								</GameButton>
+							</ClickWrapper>
+
 						)}
 					</div>
 
