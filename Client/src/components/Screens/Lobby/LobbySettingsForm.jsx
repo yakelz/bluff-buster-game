@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import BlurContainer from '../../UI/BlurContainer/BlurContainer';
 import styles from './Lobby.module.css';
 import GameButton from '../../UI/Buttons/GameButton';
@@ -7,16 +7,19 @@ import GameInput from '../../UI/GameInput/GameInput';
 import Checkbox from '../../UI/Checkbox/Checkbox';
 
 const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
-	console.log(initialData);
 	const [isPrivate, setIsPrivate] = useState(Boolean(initialData?.hasPassword) || false);
-	console.log(isPrivate);
 	const {
 		control,
 		register,
 		handleSubmit,
+		setValue,
 		formState: { errors },
 	} = useForm({
-		defaultValues: initialData,
+		defaultValues: {
+			...initialData,
+			isPrivate: initialData.isPrivate || false,
+			password: initialData.password || '',
+		},
 		turn_time: initialData?.turn_time,
 		check_time: initialData?.check_time,
 	});
@@ -47,12 +50,20 @@ const LobbySettingsForm = ({ onSubmit, title, initialData = {} }) => {
 					</select>
 				</div>
 				<div className={styles.private}>
-					<label htmlFor='privateRoom'>Приватная комната</label>
-					<Checkbox
-						id='privateRoom'
-						{...register('isPrivate')}
-						checked={isPrivate}
-						onChange={() => setIsPrivate(!isPrivate)}
+					<label htmlFor='isPrivate'>Приватная комната</label>
+					<Controller
+						control={control}
+						name='isPrivate'
+						render={({ field }) => (
+							<Checkbox
+								id='isPrivate'
+								checked={isPrivate}
+								onChange={(e) => {
+									setIsPrivate(!isPrivate);
+									setValue('isPrivate', e.target.checked);
+								}}
+							/>
+						)}
 					/>
 				</div>
 				{isPrivate && (

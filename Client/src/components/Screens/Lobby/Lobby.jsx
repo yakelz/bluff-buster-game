@@ -65,13 +65,11 @@ const Lobby = () => {
 		if (lobbyId) {
 			getLobbyInfo();
 			const interval = setInterval(() => {
-
 				getLobbyInfo();
 			}, 5000);
 
 			// Очистка интервала при размонтировании компонента
 			return () => clearInterval(interval);
-
 		}
 	}, [lobbyId]);
 
@@ -91,7 +89,7 @@ const Lobby = () => {
 			}
 
 			// Проверяем, готовы ли все игроки
-			const areAllPlayersReady = data.usersInLobby.every((user) => user.is_ready === 1 || user.user_id === userID);
+			const areAllPlayersReady = data.usersInLobby.every((user) => user.is_ready === 1);
 			const isLobbyFull = data.usersInLobby.length === 4;
 			console.log(`All Ready: ${areAllPlayersReady} isLobbyFull ${isLobbyFull}`);
 			console.log(data.usersInLobby);
