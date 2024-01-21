@@ -42,8 +42,6 @@ function hasField(results, fieldName) {
 
 		}
 	}
-
-
 	return false;
 }
 

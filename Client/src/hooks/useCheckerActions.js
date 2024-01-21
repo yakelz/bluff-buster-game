@@ -1,5 +1,5 @@
 const useCheckerActions = (data, sendActionRequest, lobbyId) => {
-	const isChecker = data?.gameInfo?.playerID === data?.gameInfo?.checkerID;
+	const isChecker = data?.gameInfo?.playerID === data?.gameInfo?.checkerID && data?.gameInfo?.isConfirming !== 1;
 
 	const handleCheck = () => {
 		const playerID = data?.gameInfo?.playerID;

@@ -197,8 +197,10 @@ BEGIN
         LEAVE makeMove;
     END IF;
 
+
+
     -- Проверка, не сходил ли игрок уже
-    IF (EXISTS (SELECT 1 FROM TurnCards WHERE turn_player_id = playerID) OR isConfirming(lobbyID)) THEN
+    IF (EXISTS (SELECT 1 FROM Checks WHERE turn_player_id = playerID) OR isConfirming(lobbyID)) THEN
         SELECT 'Вы уже сходили' AS error;
         ROLLBACK;
         LEAVE makeMove;
@@ -238,11 +240,12 @@ BEGIN
         VALUES (card4, playerID);
     END IF;
 
-
     -- Удаление карт игрока, которые он использовал в этом ходу
     DELETE FROM PlayerCards WHERE player_id = playerID AND card_id IN (card1, card2, card3, card4);
     -- Создание проверки, чтобы все игроки увидели карты которыми сыграл игрок
     INSERT INTO PlayerConfirmations(player_id) SELECT id FROM Players WHERE lobby_id = lobbyID;
+
+    SELECT 'makeMoveFinish';
     COMMIT;
 END makeMove;
 
@@ -391,7 +394,8 @@ BEGIN
 
     -- Проверяем, есть ли проверка у этого игрока?
     -- из таблицы Checks
-    IF (NOT EXISTS (SELECT 1 FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID) OR isConfirming(lobbyID)) THEN
+    IF (NOT EXISTS (SELECT 1 FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID) OR
+        isConfirming(lobbyID)) THEN
         SELECT 'У вас нет права на проверку' AS error;
         ROLLBACK;
         LEAVE declineCheckBluff;
@@ -428,7 +432,8 @@ BEGIN
 
     -- Проверяем, есть ли проверка у этого игрока?
     -- из таблицы Checks
-    IF (NOT EXISTS (SELECT 1 FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID) or isConfirming(lobbyID)) THEN
+    IF (NOT EXISTS (SELECT 1 FROM Checks WHERE player_id = checkerID AND turn_player_id = turnPlayerID) or
+        isConfirming(lobbyID)) THEN
         SELECT 'У вас нет права на проверку' AS error;
         ROLLBACK;
         LEAVE checkBluff;
