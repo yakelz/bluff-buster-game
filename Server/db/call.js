@@ -9,12 +9,13 @@ async function callProcedure(procedureName, params = []) {
 		pool.query(query, params, (error, results, fields) => {
 			if (error) {
 				console.log(error);
-
 				reject(error.sqlMessage);
 			} else {
-				console.log(procedureName + '\n');
-				console.log(results);
-				console.log('\n');
+				if (hasField(results, 'kmark')) {
+					console.log(procedureName + '\n');
+					console.log(results);
+					console.log('\n');
+				}
 
 				// Проверяем, содержит ли results[0] один объект или несколько
 				if (results[0]?.length === 1) {
@@ -31,5 +32,20 @@ async function callProcedure(procedureName, params = []) {
 		});
 	});
 }
+
+function hasField(results, fieldName) {
+	if (results && results[0] && results[0][0]) {
+		for (const key of results) {
+			if (key[0] && key[0].hasOwnProperty(fieldName)) {
+				return true;
+			}
+
+		}
+	}
+
+
+	return false;
+}
+
 
 module.exports = callProcedure;

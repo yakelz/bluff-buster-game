@@ -176,6 +176,8 @@ BEGIN
 
     START TRANSACTION;
 
+    SELECT 'makeMove' kmark;
+
     SELECT lobby_id INTO lobbyID FROM Players WHERE id = playerID;
 
     -- Проверка, является ли текущий игрок ходящим игроком
@@ -239,7 +241,7 @@ DROP FUNCTION IF EXISTS findNextPlayer;
 CREATE FUNCTION findNextPlayer(currentPlayerId INT, lobbyId INT) RETURNS INT
     SQL SECURITY INVOKER
 BEGIN
-    DECLARE nextPlayerId INT DEFAULT NULL;
+    DECLARE nextPlayerId INT;
 
     -- Поиск следующего игрока с большим id
     SELECT id
@@ -265,32 +267,48 @@ END;
 
 DROP FUNCTION IF EXISTS findNextPlayerWithChecks;
 -- Нахождение следующего игрока, который может проверить
-CREATE FUNCTION findNextPlayerWithChecks(currentPlayerId INT, lobbyId INT) RETURNS INT
+CREATE FUNCTION findNextPlayerWithChecks(currentPlayerID INT, lobbyId INT) RETURNS INT
     SQL SECURITY INVOKER
 BEGIN
     DECLARE nextPlayerId INT DEFAULT NULL;
+    DECLARE checkerPlayer INT DEFAULT NULL;
 
-    -- Поиск следующего игрока с большим id и доступными проверками
-    SELECT id
-    INTO nextPlayerId
-    FROM Players
+    SELECT player_id
+    INTO checkerPlayer
+    FROM Checks
+             JOIN Players ON Checks.player_id = Players.id
     WHERE lobby_id = lobbyId
-      AND id > currentPlayerId
-      AND checks_count > 0
-    ORDER BY id
     LIMIT 1;
 
-    -- Если такого игрока нет, ищем с начала списка
-    IF nextPlayerId IS NULL THEN
+    IF (checkerPlayer IS NULL) THEN
+        RETURN findNextPlayer(currentPlayerID, lobbyId);
+    ELSE
         SELECT id
         INTO nextPlayerId
         FROM Players
         WHERE lobby_id = lobbyId
+          AND id > checkerPlayer
           AND checks_count > 0
-          AND id != currentPlayerId
         ORDER BY id
         LIMIT 1;
+
+        IF nextPlayerId = currentPlayerId THEN
+            RETURN NULL;
+        END IF;
+
+        -- Если такого игрока нет, ищем с начала списка
+        IF nextPlayerId IS NULL THEN
+            SELECT id
+            INTO nextPlayerId
+            FROM Players
+            WHERE lobby_id = lobbyId
+              AND checks_count > 0
+              AND id != checkerPlayer
+            ORDER BY id
+            LIMIT 1;
+        END IF;
     END IF;
+
     RETURN nextPlayerId;
 END;
 
@@ -352,6 +370,8 @@ BEGIN
 
     START TRANSACTION;
 
+    SELECT 'declineCheckBluff' kmark;
+
     -- Проверка на валидность токена
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
@@ -388,6 +408,7 @@ BEGIN
     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
 
     START TRANSACTION;
+    SELECT 'checkBluff' kmark;
     -- Проверка на валидность токена
     IF userLogin IS NULL THEN
         SELECT 'Невалидный токен' AS error;
@@ -521,8 +542,7 @@ BEGIN
                                JOIN Players on Players.id = player_id) THEN
 
 
-
-           SELECT 'Inside';
+            SELECT 'Inside';
             -- Просмотр карта хода
             SELECT state INTO v_state FROM GameLobbies WHERE id = lobbyID;
 
@@ -548,6 +568,7 @@ DROP PROCEDURE IF EXISTS confirmFinish;
 CREATE PROCEDURE confirmFinish(turnPlayerID INT, lobbyID INT)
     SQL SECURITY INVOKER
 BEGIN
+    SELECT 'confirmFinish' kmark;
     DELETE FROM GameLobbies WHERE id = lobbyID;
     UPDATE Users JOIN Players on Users.id = Players.user_id
     SET win_count = win_count + 1
@@ -560,10 +581,12 @@ CREATE PROCEDURE confirmTurn(turnPlayerID INT, lobbyID INT)
     SQL SECURITY INVOKER
 this:
 BEGIN
+
     DECLARE nextPlayerID INT DEFAULT findNextPlayerWithChecks(turnPlayerID, lobbyID);
     SELECT nextPlayerID;
+    SELECT 'confirmTurn' as kmark;
     IF (nextPlayerID IS NULL) THEN
-         SELECT 'nextPlayerID is null';
+        SELECT 'nextPlayerID is null';
         -- Карт в руке нет значит он победил
         IF NOT EXISTS(SELECT 1 FROM PlayerCards WHERE player_id = turnPlayerID) THEN
             SELECT 'finish';
@@ -582,7 +605,7 @@ BEGIN
         LEAVE this;
     END IF;
 
-       SELECT 'createCheck';
+    SELECT 'createCheck';
     INSERT INTO Checks (player_id, turn_player_id, start_time) VALUES (nextPlayerId, turnPlayerID, NOW());
     UPDATE GameLobbies SET state = 'Check Accepting' WHERE id = lobbyID;
 END;
@@ -593,10 +616,13 @@ CREATE PROCEDURE confirmDeclineChecking(turnPlayerID INT, checkerPlayerID INT, l
 this:
 BEGIN
     DECLARE nextPlayerID INT;
-    DELETE FROM Checks WHERE player_id = checkerPlayerID;
-    -- Находим следующего игрока с доступными проверками
-    SET nextPlayerId = findNextPlayerWithChecks(checkerPlayerID, lobbyID);
 
+    -- Находим следующего игрока с доступными проверками
+    SELECT 'confirmDeclineChecking' as kmark;
+    SET nextPlayerId = findNextPlayerWithChecks(turnPlayerID, lobbyID);
+    DELETE FROM Checks WHERE player_id = checkerPlayerID;
+
+    SELECT nextPlayerID;
     IF (nextPlayerID IS NULL) THEN
         -- Карт в руке нет значит он победил
         IF NOT EXISTS(SELECT 1 FROM PlayerCards WHERE player_id = turnPlayerID) THEN
@@ -611,6 +637,7 @@ BEGIN
         WHERE turn_player_id = turnPlayerID;
         DELETE FROM TurnCards WHERE turn_player_id = turnPlayerID;
         CALL passTurnToNextPlayer(turnPlayerID, lobbyID, getNextRank(lobbyID));
+        UPDATE GameLobbies SET state = 'Turn' WHERE id = lobbyID;
         LEAVE this;
     END IF;
 
@@ -625,7 +652,7 @@ CREATE PROCEDURE confirmChecking(turnPlayerID INT, checkerPlayerID INT, currentR
 BEGIN
     DECLARE bluffDetected BOOLEAN;
     DECLARE losePlayer INT;
-
+    SELECT 'confirmChecking' as kmark;
 
     -- Определение, врал ли игрок
     SET bluffDetected = EXISTS(SELECT 1
@@ -650,9 +677,9 @@ BEGIN
     FROM TableCards
     WHERE lobby_id = lobbyID;
 
-    DELETE FROM CurrentTurn WHERE turn_player_id = turnPlayerID;
 
     IF bluffDetected THEN
+        DELETE FROM CurrentTurn WHERE turn_player_id = turnPlayerID;
         INSERT INTO CurrentTurn(start_time, current_rank, turn_player_id) VALUES (NOW(), currentRank, checkerPlayerID);
     ELSE
         UPDATE Players SET checks_count = checks_count - 1 WHERE id = checkerPlayerID;
@@ -665,6 +692,8 @@ BEGIN
     DELETE FROM TableCards WHERE lobby_id = lobbyID;
     -- Удаление проверки из таблицы Checks
     DELETE FROM Checks WHERE player_id = checkerPlayerID;
+
+    UPDATE GameLobbies SET state = 'Turn' WHERE id = lobbyID;
 END;
 
 DROP PROCEDURE IF EXISTS getPlayerCards;
