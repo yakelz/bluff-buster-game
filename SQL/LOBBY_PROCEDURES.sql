@@ -148,8 +148,6 @@ BEGIN
     INSERT INTO GameLobbies (password, turn_time, check_time, host_id, state) VALUES (pw, turnT, checkT, userId, 'Start');
     INSERT INTO UsersInLobby (user_id, lobby_id, is_ready, last_activity_time)
     VALUES ((SELECT id FROM Users WHERE login = userLogin), LAST_INSERT_ID(), 1, NOW());
-
-
     SELECT LAST_INSERT_ID() AS lobbyID;
 
 END createLobby;

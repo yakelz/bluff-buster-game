@@ -198,7 +198,6 @@ BEGIN
     END IF;
 
 
-
     -- Проверка, не сходил ли игрок уже
     IF (EXISTS (SELECT 1 FROM Checks WHERE turn_player_id = playerID) OR isConfirming(lobbyID)) THEN
         SELECT 'Вы уже сходили' AS error;
@@ -517,8 +516,10 @@ BEGIN
     -- Кол-во карт на столе
     SELECT COUNT(*) INTO cardsOnTableCount FROM TableCards WHERE lobby_id = lobbyID;
 
+
     -- Кол-во карт которыеми сходил текущий игрок
     SELECT COUNT(*) INTO cardsPlayedCount FROM TurnCards WHERE turn_player_id = currentPlayerID;
+
 
     -- Cлед игрок
     SET nextPlayerID = findNextPlayer(currentPlayerID, lobbyID);
@@ -550,6 +551,7 @@ BEGIN
            checkerID,
            checkResult,
            isConfirming(lobbyID) AS isConfirming;
+
 
     IF EXISTS(SELECT 1 FROM PlayerConfirmations WHERE player_id = playerID) THEN
         -- Если есть то удаляем
@@ -736,6 +738,35 @@ BEGIN
     FROM PlayerCards
              JOIN Cards ON PlayerCards.card_id = Cards.id
     WHERE player_id = (SELECT id FROM Players WHERE user_id = userId AND lobby_id = lobbyId);
+END;
+
+DROP PROCEDURE IF EXISTS getTurnCards;
+CREATE PROCEDURE getTurnCards(token INT UNSIGNED, lobbyId INT)
+    COMMENT 'Получить карты игрока. Параметры: userToken, lobbyId'
+
+this:
+BEGIN
+
+    DECLARE v_state VARCHAR(30);
+    -- Проверка на валидность токена
+    DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
+    IF userLogin IS NULL THEN
+        SELECT 'Невалидный токен' AS error;
+        LEAVE this;
+    END IF;
+
+
+    SELECT state INTO v_state FROM GameLobbies WHERE id = lobbyID;
+
+    IF (v_state != 'Checking') THEN
+        LEAVE this;
+    END IF;
+
+    SELECT card_id, `rank`, `suit`
+    FROM TurnCards
+             JOIN Cards ON TurnCards.card_id = Cards.id
+             JOIN Players ON turn_player_id = Players.id
+    WHERE lobbyId = lobby_id;
 END;
 
 DROP PROCEDURE IF EXISTS getPlayersInLobby;

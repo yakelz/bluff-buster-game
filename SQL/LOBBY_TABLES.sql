@@ -40,3 +40,7 @@ CREATE TABLE UsersInLobby
     FOREIGN KEY (user_id) REFERENCES Users (id) ON DELETE CASCADE,
     FOREIGN KEY (lobby_id) REFERENCES GameLobbies (id) ON DELETE CASCADE
 ) COMMENT ='Таблица для хранения связи между пользователями и лобби';
+
+CREATE TABLE ClearSessionLogs (
+    time DATETIME NOT NULL
+)
