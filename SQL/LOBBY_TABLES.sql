@@ -24,6 +24,7 @@ CREATE TABLE Players
     lobby_id     INT              NOT NULL COMMENT 'id лобби',
     checks_count TINYINT UNSIGNED NOT NULL DEFAULT 3 COMMENT 'Количество проверок игрока',
     auto_play    BOOLEAN          NOT NULL DEFAULT 0 COMMENT 'Автоматическая игра',
+    last_activity_time DATETIME NOT NULL COMMENT  'Время последней активности',
     FOREIGN KEY (user_id) REFERENCES Users (id) ON DELETE CASCADE,
     FOREIGN KEY (lobby_id) REFERENCES GameLobbies (id) ON DELETE CASCADE,
     UNIQUE ak (user_id, lobby_id)

@@ -497,6 +497,8 @@ BEGIN
     END IF;
 
 
+    UPDATE UsersInLobby SET last_activity_time = NOW() WHERE user_id = userId AND lobby_id = lobbyID;
+
     -- Получение userId из login
     SELECT id INTO userId FROM Users WHERE login = userLogin;
     -- Получение player_id, связанного с userId
