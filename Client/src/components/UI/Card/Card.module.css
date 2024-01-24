@@ -9,8 +9,13 @@
 }
 
 /* .card:hover {
-	transform: translateY(-10px);
+	border: 4px solid #0086bb;
 } */
+
+.selected {
+	border: 4px solid #0086bb;
+	transform: translateY(-24px);
+}
 
 .top {
 	position: absolute;
