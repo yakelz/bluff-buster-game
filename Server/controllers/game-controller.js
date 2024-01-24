@@ -18,10 +18,15 @@ class GameController {
 			const gameInfo = await callProcedure('updateGameInfo', params);
 			const handCards = await callProcedure('getPlayerCards', params);
 			const players = await callProcedure('getPlayersInLobby', params);
+			let turnCards = await callProcedure('getTurnCards', params);
+
+			turnCards = Array.isArray(turnCards) ? turnCards : turnCards ? [turnCards] : null;
+
 			res.status(200).json({
 				gameInfo: gameInfo,
 				handCards: handCards,
 				players: players,
+				turnCards: turnCards,
 			});
 		} catch (error) {
 			res.status(500).json({ error: error });

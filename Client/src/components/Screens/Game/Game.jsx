@@ -56,7 +56,7 @@ const Game = () => {
 
 	useEffect(() => {
 		updateGameInfo();
-		const interval = setInterval(updateGameInfo, 5000);
+		const interval = setInterval(updateGameInfo, 2000);
 		return () => clearInterval(interval);
 	}, []);
 
@@ -105,6 +105,10 @@ const Game = () => {
 		(player) => player.player_id === data.gameInfo.currentPlayerID
 	);
 
+	const checkerPlayer = data?.players?.find(
+		(player) => player.player_id === data.gameInfo.checkerID
+	);
+
 	return (
 		<>
 			{!data ? (
@@ -121,12 +125,12 @@ const Game = () => {
 					{/* Кнопки в интерфейсе */}
 					<div className={styles.buttons}>
 						<div className={styles.buttonGroup}>
-							<GameButtonIco Ico={BackIco} onClick={() => { }} />
-							<GameButtonIco Ico={MusicIco} onClick={() => { }} />
+							<GameButtonIco Ico={BackIco} onClick={() => {}} />
+							<GameButtonIco Ico={MusicIco} onClick={() => {}} />
 						</div>
 						<div className={styles.buttonGroup}>
-							<GameButtonIco Ico={QuestionIco} onClick={() => { }} />
-							<GameButtonIco Ico={AutoplayIco} onClick={() => { }} />
+							<GameButtonIco Ico={QuestionIco} onClick={() => {}} />
+							<GameButtonIco Ico={AutoplayIco} onClick={() => {}} />
 						</div>
 					</div>
 
@@ -136,8 +140,9 @@ const Game = () => {
 							{data.players.map((player) => (
 								<li
 									key={player.player_id}
-									className={`${styles.player} ${player.player_id === data.gameInfo.currentPlayerID ? styles.currentTurn : ''
-										}`}
+									className={`${styles.player} ${
+										player.player_id === data.gameInfo.currentPlayerID ? styles.currentTurn : ''
+									}`}
 								>
 									<PlayerItem playerRank={5} nickname={player.login} check_count='3' />
 								</li>
@@ -152,24 +157,55 @@ const Game = () => {
 					<div className={styles.game__info}>
 						{/* Таймер */}
 						<Timer duration={20} playerName={currentPlayer.login} />
-						{data.gameInfo.cardsOnTableCount === 0 && (
+						{data.gameInfo.cardsOnTableCount >= 0 && (
 							<>
-								{/* Кол-во сыгранных карт за текущий ход */}
-								<div className={styles.turn__cards}>
-									{Array.from({ length: data.gameInfo.cardsPlayedCount }, (_, index) => (
-										<img key={index} src={backCard} alt='Обложка карты' />
-									))}
-								</div>
+								{data.turnCards ? (
+									<>
+										{/* Кол-во сыгранных карт за текущий ход */}
+										<div className={styles.turn__cards}>
+											{data.turnCards.map((card) => (
+												<Card key={card.card_id} rank={card.rank} suit={card.suit} />
+											))}
+										</div>
+									</>
+								) : (
+									<>
+										{/* Кол-во сыгранных карт за текущий ход */}
+										<div className={styles.turn__cards}>
+											{Array.from({ length: data.gameInfo.cardsPlayedCount }, (_, index) => (
+												<img key={index} src={backCard} alt='Обложка карты' />
+											))}
+										</div>
+									</>
+								)}
 								{/* Кол-во сыгранных карт */}
-								<span className={styles.counter}>{data.gameInfo.cardsOnTableCount}</span>
+								<span className={styles.counter}>
+									{data.gameInfo.cardsOnTableCount + data.gameInfo.cardsPlayedCount}
+								</span>
+
 								{/* Информация о ходе */}
-								<div className={styles.info__title}>
-									<span>
-										{currentPlayer ? currentPlayer.login : 'Неизвестный игрок'} положил{' '}
-										{getCardsPlayedCountText(data.gameInfo.cardsPlayedCount)}{' '}
-										<strong>{data.gameInfo.currentRank}</strong>
-									</span>
-								</div>
+								{data.turnCards ? (
+									<>
+										<div className={styles.info__title}>
+											<span>
+												{checkerPlayer ? checkerPlayer.login : 'Неизвестный игрок'} проверяет{' '}
+												{currentPlayer ? currentPlayer.login : 'Неизвестного игрока'}
+											</span>
+										</div>
+									</>
+								) : (
+									<>
+										{data.gameInfo.cardsPlayedCount > 0 && (
+											<div className={styles.info__title}>
+												<span>
+													{currentPlayer ? currentPlayer.login : 'Неизвестный игрок'} положил{' '}
+													{getCardsPlayedCountText(data.gameInfo.cardsPlayedCount)}{' '}
+													<strong>{data.gameInfo.currentRank}</strong>
+												</span>
+											</div>
+										)}
+									</>
+								)}
 							</>
 						)}
 
@@ -180,13 +216,12 @@ const Game = () => {
 							</ClickWrapper>
 						)}
 						{canPlay && (
-
 							<ClickWrapper initState={false}>
 								<GameButton onClick={submitSelectedCards}>
-									Сыграть {getCardsPlayedCountText(selectedCards.length)} {data.gameInfo.currentRank}
+									Сыграть {getCardsPlayedCountText(selectedCards.length)}{' '}
+									{data.gameInfo.currentRank}
 								</GameButton>
 							</ClickWrapper>
-
 						)}
 					</div>
 

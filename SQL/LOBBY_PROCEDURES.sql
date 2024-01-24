@@ -354,8 +354,7 @@ BEGIN
              LEFT JOIN UsersInLobby su ON s.id = su.lobby_id
     GROUP BY s.id
     HAVING SUM(CASE
-                   WHEN su.last_activity_time IS NULL THEN 1
-                   WHEN TIMESTAMPDIFF(SECOND, su.last_activity_time, NOW()) > 15 THEN 1
+                   WHEN TIMESTAMPDIFF(SECOND, su.last_activity_time, NOW()) > 150 THEN 1
                    ELSE 0
         END) = COUNT(su.lobby_id);
 

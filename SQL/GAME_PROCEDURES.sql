@@ -293,7 +293,27 @@ BEGIN
     LIMIT 1;
 
     IF (checkerPlayer IS NULL) THEN
-        RETURN findNextPlayer(currentPlayerID, lobbyId);
+        SELECT id
+        INTO nextPlayerId
+        FROM Players
+        WHERE lobby_id = lobbyId
+          AND id > currentPlayerId
+        AND checks_count > 0
+        ORDER BY id
+        LIMIT 1;
+
+        -- Если такого игрока нет, выбираем первого по списку
+        IF nextPlayerId IS NULL THEN
+            SELECT id
+            INTO nextPlayerId
+            FROM Players
+            WHERE lobby_id = lobbyId
+            AND checks_count > 0
+            ORDER BY id
+            LIMIT 1;
+        END IF;
+
+        RETURN nextPlayerId;
     ELSE
         SELECT id
         INTO nextPlayerId
@@ -444,6 +464,8 @@ BEGIN
     FROM GameLobbies
              JOIN Players ON GameLobbies.id = Players.lobby_id
     WHERE Players.id = checkerID;
+
+    -- timer
 
     -- Получение текущего ранга карты
     SELECT current_rank INTO currentRank FROM CurrentTurn WHERE turn_player_id = turnPlayerID;
