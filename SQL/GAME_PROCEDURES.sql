@@ -244,6 +244,7 @@ BEGIN
     -- Создание проверки, чтобы все игроки увидели карты которыми сыграл игрок
     INSERT INTO PlayerConfirmations(player_id) SELECT id FROM Players WHERE lobby_id = lobbyID;
 
+
     SELECT 'makeMoveFinish';
     COMMIT;
 END makeMove;
@@ -293,27 +294,7 @@ BEGIN
     LIMIT 1;
 
     IF (checkerPlayer IS NULL) THEN
-        SELECT id
-        INTO nextPlayerId
-        FROM Players
-        WHERE lobby_id = lobbyId
-          AND id > currentPlayerId
-        AND checks_count > 0
-        ORDER BY id
-        LIMIT 1;
-
-        -- Если такого игрока нет, выбираем первого по списку
-        IF nextPlayerId IS NULL THEN
-            SELECT id
-            INTO nextPlayerId
-            FROM Players
-            WHERE lobby_id = lobbyId
-            AND checks_count > 0
-            ORDER BY id
-            LIMIT 1;
-        END IF;
-
-        RETURN nextPlayerId;
+        RETURN findNextPlayer(currentPlayerID, lobbyId);
     ELSE
         SELECT id
         INTO nextPlayerId
@@ -338,11 +319,16 @@ BEGIN
               AND id != checkerPlayer
             ORDER BY id
             LIMIT 1;
+
+            IF nextPlayerId = currentPlayerId THEN
+                RETURN NULL;
+            END IF;
         END IF;
     END IF;
 
     RETURN nextPlayerId;
 END;
+
 
 DROP PROCEDURE IF EXISTS passTurnToNextPlayer;
 -- Передать ход другому игроку
@@ -354,7 +340,8 @@ BEGIN
     SET nextPlayerId = findNextPlayer(currentPlayerId, lobbyId);
 
     DELETE FROM CurrentTurn WHERE turn_player_id = currentPlayerId;
-    INSERT CurrentTurn(turn_player_id, current_rank, start_time) VALUES (nextPlayerId, currentRank, NOW());
+    INSERT CurrentTurn(turn_player_id, current_rank, start_time)
+    VALUES (nextPlayerId, currentRank, NOW(), false);
 END;
 
 DROP FUNCTION IF EXISTS getNextRank;
@@ -494,6 +481,9 @@ BEGIN
     DECLARE userId INT;
     DECLARE playerID INT;
     DECLARE v_state VARCHAR(20);
+    DECLARE v_duration INT;
+    DECLARE v_check_duration INT;
+    DECLARE v_win_player INT;
 
     -- Проверка на валидность токена
     DECLARE userLogin VARCHAR(64) DEFAULT getUserLoginByToken(token);
@@ -518,18 +508,25 @@ BEGIN
     END IF;
 
 
-    UPDATE UsersInLobby SET last_activity_time = NOW() WHERE user_id = userId AND lobby_id = lobbyID;
+#         CALL autoPlay(lobbyID);
+
+
 
     -- Получение userId из login
     SELECT id INTO userId FROM Users WHERE login = userLogin;
+
+    UPDATE UsersInLobby SET last_activity_time = NOW() WHERE user_id = userId AND lobby_id = lobbyID;
     -- Получение player_id, связанного с userId
     SELECT id INTO playerID FROM Players WHERE user_id = userId AND lobby_id = lobbyID;
 
     -- Есть ли ожидание потверждения от игрока?
 
     -- Получение id текущего игрока и текущего номинала
-    SELECT turn_player_id, current_rank
-    INTO currentPlayerID, currentRank
+    SELECT turn_player_id,
+           current_rank,
+           (SELECT turn_time FROM GameLobbies WHERE GameLobbies.id = lobbyID LIMIT 1) -
+           (TIMESTAMPDIFF(SECOND, start_time, NOW()))
+    INTO currentPlayerID, currentRank, v_duration
     FROM CurrentTurn
              JOIN Players ON CurrentTurn.turn_player_id = Players.id
     WHERE Players.lobby_id = lobbyID;
@@ -547,11 +544,19 @@ BEGIN
     SET nextPlayerID = findNextPlayer(currentPlayerID, lobbyID);
 
     -- Кто делает проверку
-    SELECT player_id
-    INTO checkerID
+    SELECT player_id,
+           (SELECT check_time FROM GameLobbies WHERE GameLobbies.id = lobbyID LIMIT 1) -
+           (TIMESTAMPDIFF(SECOND, start_time, NOW()))
+    INTO checkerID, v_check_duration
     FROM Checks
     WHERE turn_player_id = currentPlayerID
     LIMIT 1;
+
+    SELECT state INTO v_state FROM GameLobbies WHERE id = lobbyID;
+
+    IF (v_state = 'Finish') THEN
+        SET v_win_player = currentPlayerID;
+    END IF;
 
     -- Смотрю Checks, смотрю есть ли там какой то игрок из этого лобби
     -- Смотрим в PlayerConfirm
@@ -572,10 +577,14 @@ BEGIN
            nextPlayerID,
            checkerID,
            checkResult,
-           isConfirming(lobbyID) AS isConfirming;
+           isConfirming(lobbyID) AS isConfirming,
+           v_duration            as turn_remain,
+           v_check_duration      as check_remain,
+           v_win_player          as win_player;
 
 
     IF EXISTS(SELECT 1 FROM PlayerConfirmations WHERE player_id = playerID) THEN
+
         -- Если есть то удаляем
         DELETE FROM PlayerConfirmations WHERE player_id = playerID;
         -- Если она последняя то делаем ключевое действие
@@ -584,11 +593,8 @@ BEGIN
                                JOIN Players on Players.id = player_id) THEN
 
 
-            SELECT 'Inside';
-            -- Просмотр карта хода
             SELECT state INTO v_state FROM GameLobbies WHERE id = lobbyID;
 
-            SELECT v_state;
 
             IF (v_state = 'Checking') THEN
                 CALL confirmChecking(currentPlayerID, checkerID, currentRank, lobbyID);
@@ -602,8 +608,12 @@ BEGIN
             IF (v_state = 'Check Accepting') THEN
                 CALL confirmDeclineChecking(currentPlayerID, checkerID, lobbyID);
             end if;
+
         END IF;
+
     END IF;
+
+
 END updateGameInfo;
 
 DROP PROCEDURE IF EXISTS confirmFinish;
@@ -722,7 +732,8 @@ BEGIN
 
     IF bluffDetected THEN
         DELETE FROM CurrentTurn WHERE turn_player_id = turnPlayerID;
-        INSERT INTO CurrentTurn(start_time, current_rank, turn_player_id) VALUES (NOW(), currentRank, checkerPlayerID);
+        INSERT INTO CurrentTurn(start_time, current_rank, turn_player_id)
+        VALUES (NOW(), currentRank, checkerPlayerID);
     ELSE
         UPDATE Players SET checks_count = checks_count - 1 WHERE id = checkerPlayerID;
         CALL passTurnToNextPlayer(turnPlayerID, lobbyID, getNextRank(lobbyID));
@@ -816,7 +827,7 @@ END getPlayersInLobby;
 
 -- Включить автоматическую игру игроку
 -- Когда человек вышел из текущей игры
-CREATE PROCEDURE setAutoPlay(token INT UNSIGNED, player_id INT)
+CREATE PROCEDURE disableAutoPlay(token INT UNSIGNED, player_id INT)
     COMMENT 'Включить автоматическую игру.'
 BEGIN
     -- check token
@@ -825,7 +836,7 @@ END;
 
 -- Выключить автоматическую игру игроку
 -- Когда человек зашел обратно в игру
-CREATE PROCEDURE setAutoPlay(token INT UNSIGNED, player_id INT)
+CREATE PROCEDURE enableAutoPlay(token INT UNSIGNED, player_id INT)
     COMMENT 'Выключить автоматическую игру.'
 BEGIN
     -- check token
@@ -836,10 +847,82 @@ END;
 -- На сервере просто буду проверять есть ли auto_play у игрока
 -- Если есть, сразу выдаем MakeMove с рандомными картами
 -- Если нет, ставим таймер и ждем.
-CREATE FUNCTION getAutoPlay(player_id INT UNSIGNED)
-    RETURNS BOOL
+DROP PROCEDURE IF EXISTS autoPlay;
+CREATE PROCEDURE autoPlay(p_lobby_id INT)
     COMMENT 'Проверить автоматическую игру.'
+this:
 BEGIN
-    -- check token
-    -- set auto play = 0 to playerID
+    DECLARE randomCardID INT;
+    DECLARE currentPlayerID INT;
+
+
+    DELETE pc
+    FROM PlayerConfirmations pc
+             JOIN Players ON pc.player_id = Players.id
+             JOIN UsersInLobby ON Players.user_id = UsersInLobby.user_id
+    WHERE TIMESTAMPDIFF(SECOND, last_activity_time, NOW()) > 30;
+
+    IF EXISTS(SELECT 1
+              FROM PlayerConfirmations
+                       JOIN Players ON PlayerConfirmations.player_id = Players.id
+              WHERE lobby_id = p_lobby_id) THEN
+        LEAVE this;
+    END IF;
+
+    SELECT turn_player_id
+    INTO currentPlayerID
+    FROM CurrentTurn
+             JOIN Players ON CurrentTurn.turn_player_id = Players.id
+    WHERE lobby_id = p_lobby_id;
+
+
+    IF (currentPlayerID IS NULL) THEN
+        LEAVE this;
+    END IF;
+
+
+    IF (NOT EXISTS(SELECT 1 FROM Checks WHERE turn_player_id = currentPlayerID)  AND EXISTS(SELECT 1
+               FROM CurrentTurn
+               WHERE turn_player_id = currentPlayerID
+                 AND TIMESTAMPDIFF(SECOND, start_time, NOW()) >
+                     (SELECT turn_time FROM GameLobbies WHERE id = p_lobby_id)))
+    THEN
+
+
+        SELECT PlayerCards.card_id
+        INTO randomCardID
+        FROM PlayerCards
+        WHERE player_id = currentPlayerID
+        ORDER BY RAND()
+        LIMIT 1;
+
+        IF (randomCardID IS NULL) THEN
+
+            LEAVE this;
+        END IF;
+
+
+        INSERT INTO TurnCards (card_id, turn_player_id) VALUES (randomCardID, currentPlayerID);
+        DELETE FROM PlayerCards WHERE card_id = randomCardID;
+        INSERT INTO PlayerConfirmations(player_id) SELECT id FROM Players WHERE lobby_id = p_lobby_id;
+
+        LEAVE this;
+    END IF;
+
+    IF
+        (EXISTS(SELECT 1
+                FROM Checks
+                WHERE TIMESTAMPDIFF(SECOND, start_time, NOW()) >
+                      (SELECT check_time FROM GameLobbies WHERE id = p_lobby_id)))
+    THEN
+
+
+        INSERT INTO PlayerConfirmations(player_id)
+        SELECT id
+        FROM Players
+        WHERE lobby_id = p_lobby_id;
+
+
+        LEAVE this;
+    END IF;
 END;

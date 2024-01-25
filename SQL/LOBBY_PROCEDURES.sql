@@ -353,10 +353,7 @@ BEGIN
     FROM GameLobbies s
              LEFT JOIN UsersInLobby su ON s.id = su.lobby_id
     GROUP BY s.id
-    HAVING SUM(CASE
-                   WHEN TIMESTAMPDIFF(SECOND, su.last_activity_time, NOW()) > 150 THEN 1
-                   ELSE 0
-        END) = COUNT(su.lobby_id);
+    HAVING SUM(IF(TIMESTAMPDIFF(SECOND, su.last_activity_time, NOW()) > 150, 1, 0)) = COUNT(su.lobby_id);
 
     -- Удаляем записи из Sessions на основе временной таблицы
     DELETE s
