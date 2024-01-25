@@ -8,6 +8,7 @@ import LobbyItem from '../../UI/LobbyItem/LobbyItem';
 import PasswordModal from '../../UI/PasswordModal/PasswordModal';
 
 import { FallingLines } from 'react-loader-spinner';
+import GameButton from '../../UI/Buttons/GameButton';
 
 function Search() {
 	const { data, sendRequest } = useApi();
@@ -62,18 +63,33 @@ function Search() {
 			) : (
 				<div className={styles.menu}>
 					<BlurContainer style={styles.games}>
-						<h3>Список игр</h3>
-						{data.availableGames &&
-							data.availableGames.map((game) => (
-								<LobbyItem
-									title={`#${game.id} Комната ${game.hostLogin}`}
-									key={game.id}
-									userCount={game.userCount}
-									gameId={game.id}
-									onButtonClick={() => onLobbyClick(game)}
-									hasPassword={game.hasPassword}
-								/>
-							))}
+						{data.availableGames && data.availableGames.length === 0 ? (
+							<>
+								<h3>Доступных игр нет</h3>
+								<GameButton
+									onClick={() => {
+										navigate(`/create`);
+									}}
+								>
+									{' '}
+									Создать игру{' '}
+								</GameButton>
+							</>
+						) : (
+							<>
+								<h3>Список игр</h3>
+								{data.availableGames.map((game) => (
+									<LobbyItem
+										title={`#${game.id} Комната ${game.hostLogin}`}
+										key={game.id}
+										userCount={game.userCount}
+										gameId={game.id}
+										onButtonClick={() => onLobbyClick(game)}
+										hasPassword={game.hasPassword}
+									/>
+								))}
+							</>
+						)}
 					</BlurContainer>
 				</div>
 			)}

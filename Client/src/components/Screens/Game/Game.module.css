@@ -1,11 +1,15 @@
-.cardSelected {
-	border: 2px solid #4caf50;
-	transform: translateY(-20px);
+.selected {
+	border: 4px solid #0086bb;
+	transform: translateY(-24px);
 }
 
 .currentTurn {
 	border: 5px solid #99b4ff;
 	border-radius: 15px;
+}
+
+.turnCards {
+	display: flex;
 }
 
 .buttons {
@@ -94,10 +98,20 @@
 .cards {
 	display: flex;
 	position: relative;
+	overflow-x: scroll;
+	padding-top: 24px;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+
+	white-space: nowrap;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
 }
 
 .cards > * {
-	margin-right: -65px;
+	margin-right: -70px;
 	transition: transform 0.3s ease;
 }
 
@@ -147,4 +161,41 @@
 	left: 16px;
 	top: 40%;
 	transform: translateY(-50%);
+}
+
+.modalOverlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 1000;
+}
+
+.modal {
+	padding: 20px;
+	z-index: 1001;
+	max-width: 400px;
+	width: 100%;
+}
+
+.modalHeader {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.modalTitle {
+	font-size: 30px;
+	font-weight: 700;
+}
+
+.modalFooter {
+	display: flex;
+	justify-content: flex-end;
 }

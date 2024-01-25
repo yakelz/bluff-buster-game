@@ -17,6 +17,11 @@ const useCardSelection = (data, sendActionRequest, lobbyId) => {
 	const submitSelectedCards = () => {
 		const playerID = data?.gameInfo?.playerID;
 
+		if (selectedCards.length === 0) {
+			console.log('no cards selected');
+			return;
+		}
+
 		const payload = {
 			playerID,
 			selectedCards,

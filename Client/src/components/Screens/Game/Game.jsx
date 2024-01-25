@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import styles from './Game.module.css';
 import useApi from '../../../hooks/useApi';
 import bg from '../../../assets/img/backgrounds/game.png';
@@ -21,8 +21,12 @@ import GameButton from '../../UI/Buttons/GameButton';
 import ClickWrapper from '../../UI/Buttons/ClickWrapper';
 import { FallingLines } from 'react-loader-spinner';
 import Timer from '../../UI/Timer/Timer';
+import useDragScroll from '../../../hooks/useDragScroll';
+import BlurContainer from '../../UI/BlurContainer/BlurContainer';
 
 const Game = () => {
+	const navigate = useNavigate();
+
 	useEffect(() => {
 		const wrapper = document.querySelector('.wrapper');
 		wrapper.style.padding = '0';
@@ -54,11 +58,20 @@ const Game = () => {
 		});
 	};
 
+	const [intervalId, setIntervalId] = useState(null);
+
 	useEffect(() => {
 		updateGameInfo();
-		const interval = setInterval(updateGameInfo, 2000);
-		return () => clearInterval(interval);
+		const id = setInterval(updateGameInfo, 1000);
+		setIntervalId(id);
+		return () => clearInterval(id);
 	}, []);
+
+	useEffect(() => {
+		if (data && data.gameInfo.win_player !== null) {
+			clearInterval(intervalId);
+		}
+	}, [data]);
 
 	// Текущий ход у пользователя?
 	const canPlay =
@@ -109,6 +122,10 @@ const Game = () => {
 		(player) => player.player_id === data.gameInfo.checkerID
 	);
 
+	const winPlayer = data?.players?.find((player) => player.player_id === data.gameInfo.win_player);
+
+	const dragScrollRef = useDragScroll(data);
+
 	return (
 		<>
 			{!data ? (
@@ -125,11 +142,21 @@ const Game = () => {
 					{/* Кнопки в интерфейсе */}
 					<div className={styles.buttons}>
 						<div className={styles.buttonGroup}>
-							<GameButtonIco Ico={BackIco} onClick={() => {}} />
+							<GameButtonIco
+								Ico={BackIco}
+								onClick={() => {
+									navigate(`/`);
+								}}
+							/>
 							<GameButtonIco Ico={MusicIco} onClick={() => {}} />
 						</div>
 						<div className={styles.buttonGroup}>
-							<GameButtonIco Ico={QuestionIco} onClick={() => {}} />
+							<GameButtonIco
+								Ico={QuestionIco}
+								onClick={() => {
+									navigate(`/rules`);
+								}}
+							/>
 							<GameButtonIco Ico={AutoplayIco} onClick={() => {}} />
 						</div>
 					</div>
@@ -156,7 +183,15 @@ const Game = () => {
 					{/* Игровая информация (по середине экрана) */}
 					<div className={styles.game__info}>
 						{/* Таймер */}
-						<Timer duration={20} playerName={currentPlayer.login} />
+						{data.gameInfo.checkerID ? (
+							<Timer
+								state={1}
+								duration={data.gameInfo.check_remain}
+								playerName={checkerPlayer.login}
+							/>
+						) : (
+							<Timer duration={data.gameInfo.turn_remain} playerName={currentPlayer.login} />
+						)}
 						{data.gameInfo.cardsOnTableCount >= 0 && (
 							<>
 								{data.turnCards ? (
@@ -217,30 +252,59 @@ const Game = () => {
 						)}
 						{canPlay && (
 							<ClickWrapper initState={false}>
-								<GameButton onClick={submitSelectedCards}>
-									Сыграть {getCardsPlayedCountText(selectedCards.length)}{' '}
-									{data.gameInfo.currentRank}
-								</GameButton>
+								{selectedCards.length !== 0 ? (
+									<ClickWrapper initState={false}>
+										<GameButton onClick={submitSelectedCards}>
+											Сыграть {getCardsPlayedCountText(selectedCards.length)}{' '}
+											{data.gameInfo.currentRank}
+										</GameButton>
+									</ClickWrapper>
+								) : (
+									<GameButton disabled>Сыграть {data.gameInfo.currentRank}</GameButton>
+								)}
 							</ClickWrapper>
 						)}
 					</div>
 
 					{/* Карты пользователя*/}
-					<div className={styles.cards}>
-						{sortedHandCards.map((card) => (
-							<Card
-								key={card.card_id}
-								rank={card.rank}
-								suit={card.suit}
-								className={
-									canPlay && selectedCards.includes(card.card_id)
-										? `${styles.card} ${styles.cardSelected}`
-										: styles.card
-								}
-								onClick={() => toggleCardSelection(card.card_id, canPlay)}
-							/>
-						))}
+					<div className={styles.sliderContainer}>
+						{/* <button onClick={scrollLeft}>&lt;</button> */}
+						<div ref={dragScrollRef} className={styles.cards}>
+							{sortedHandCards.map((card) => (
+								<Card
+									key={card.card_id}
+									rank={card.rank}
+									suit={card.suit}
+									className={
+										canPlay && selectedCards.includes(card.card_id)
+											? `${styles.card} ${styles.selected}`
+											: styles.card
+									}
+									onClick={() => toggleCardSelection(card.card_id, canPlay)}
+								/>
+							))}
+						</div>
+						{/* <button onClick={scrollRight}>&gt;</button> */}
 					</div>
+
+					{data.gameInfo.win_player !== null && (
+						<div className={styles.modalOverlay}>
+							<BlurContainer style={styles.modal}>
+								<div className={styles.modalHeader}>
+									<h2 className={styles.modalTitle}>Победитель {winPlayer.login}</h2>
+								</div>
+								<div className={styles.modalFooter}>
+									<GameButton
+										onClick={() => {
+											navigate(`/`);
+										}}
+									>
+										Выйти из игры
+									</GameButton>
+								</div>
+							</BlurContainer>
+						</div>
+					)}
 				</main>
 			)}
 		</>

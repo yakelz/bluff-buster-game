@@ -16,9 +16,11 @@ class GameController {
 		try {
 			const params = [req.session.token, lobbyId];
 			const gameInfo = await callProcedure('updateGameInfo', params);
-			const handCards = await callProcedure('getPlayerCards', params);
+			let handCards = await callProcedure('getPlayerCards', params);
 			const players = await callProcedure('getPlayersInLobby', params);
 			let turnCards = await callProcedure('getTurnCards', params);
+
+			handCards = Array.isArray(handCards) ? handCards : handCards ? [handCards] : null;
 
 			turnCards = Array.isArray(turnCards) ? turnCards : turnCards ? [turnCards] : null;
 
